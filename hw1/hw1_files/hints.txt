@@ -1,0 +1,15 @@
+Hashlib Python -- String encodings 
+https://docs.python.org/3/library/hashlib.html
+https://www.thepythoncode.com/article/hashing-functions-in-python-using-hashlib
+https://www.programiz.com/python-programming/methods/string/encode
+
+
+Salt : Maximum of 5 digits
+
+Leet : Start by using the simple and most popular transformations (characters->numbers).
+A leet transformation can be applied to parts of the string (e.g., only a->4) as well as to each character (if there is a valid mapping) individually. 
+
+
+Caesar cipher: Use ASCII table for transformations for the given indexes. When transforming characters use the indexes 65-122 and for the numbers 48-57. Remember to stay in the bounds.
+
+Substitution cipher : The alphabet used for the substitution cipher is a shifted english alphabet. You need to think how you can map the english alphabet to the shifted alphabet. The encrypted text is a typical set of sentences, part of a larger text. You should be able to decrypt every word and form the sentences without changing any punctuation.
