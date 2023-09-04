@@ -117,7 +117,7 @@ def save_passwords_to_file(user_data_cracked):
     # Order by username
     user_data_cracked.sort(key=lambda x: x['user'])
 
-    with open('passwords.txt', 'w') as file:
+    with open('/hw1/passwords.txt', 'w') as file:
         for entry in user_data_cracked:
             username = entry['user']
             password = entry['password']
@@ -174,8 +174,9 @@ for common_password in common_passwords:
 
 end_time = time.time()  # Record the end time
 elapsed_time = end_time - start_time  # Calculate the elapsed time
-print(f"Cracking took {elapsed_time} seconds")
-#print_user_data_cracked(user_data_cracked)
+print(f"Cracking (caesar, leek and directly hashed) passwords took {elapsed_time} seconds")
+print_user_data_cracked(user_data_cracked)
+print('################################################################################')
 
 #--------------------------------------
 start_time = time.time() 
@@ -207,7 +208,8 @@ for common_password in common_passwords:
 end_time = time.time()  # Record the end time
 elapsed_time = end_time - start_time  # Calculate the elapsed time
 print(f"Cracking salted passwords took {elapsed_time} seconds")
-
+print_user_data_cracked(user_data_cracked)
+print('################################################################################')
 
 '''
 Based on the reuslts of TASK 2, now we can crack user7's password too.
@@ -286,6 +288,8 @@ end_time = time.time()  # Record the end time
 elapsed_time = end_time - start_time  # Calculate the elapsed time
 print(f"Cracking user7 password took {elapsed_time} seconds")
 print_user_data_cracked(user_data_cracked)
+print('################################################################################')
 
 # Call the function to save the passwords to the file
 save_passwords_to_file(user_data_cracked)
+print('Saved users and their passwords in passwords.txt')
