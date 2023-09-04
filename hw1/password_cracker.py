@@ -123,173 +123,98 @@ def save_passwords_to_file(user_data_cracked):
             password = entry['password']
             file.write(f'{username}:{password}\n')
 
-
-user_data = get_hashed_passwords()
-common_passwords = get_common_passwords()
-user_data_cracked = []
-
-
-'''
-IDEA
-For each word in the dictionary of common password, we hash it different using hashing algorithms, md5, sha1, sha25.
-Then, we there eists a user in user_data whose hashed password is equal. If so, we store in user_data_cracked the
-password in clear.
-'''
-start_time = time.time() 
-for common_password in common_passwords:
+if __name__ == "__main__":
         
-        hashes = hash_password(common_password)
-        leek_hashes = hash_password(leetspeak(common_password))
-        
-        user3_found = False # to exit the loop as soon as it is found
-        shift_value = 1
-        while shift_value<26 and not user3_found:
-            caesar_hashes = hash_password(caesar_cipher(common_password,shift_value))
-            if user_data['user3'] in caesar_hashes:
-                result = {
-                        "user": 'user3',
+    user_data = get_hashed_passwords()
+    common_passwords = get_common_passwords()
+    user_data_cracked = []
+
+
+    '''
+    IDEA
+    For each word in the dictionary of common password, we hash it different using hashing algorithms, md5, sha1, sha25.
+    Then, we there eists a user in user_data whose hashed password is equal. If so, we store in user_data_cracked the
+    password in clear.
+    '''
+    start_time = time.time() 
+    for common_password in common_passwords:
+            
+            hashes = hash_password(common_password)
+            leek_hashes = hash_password(leetspeak(common_password))
+            
+            user3_found = False # to exit the loop as soon as it is found
+            shift_value = 1
+            while shift_value<26 and not user3_found:
+                caesar_hashes = hash_password(caesar_cipher(common_password,shift_value))
+                if user_data['user3'] in caesar_hashes:
+                    result = {
+                            "user": 'user3',
+                            "hashed_password": hashed_password,
+                            "password": common_password,
+                            "salt": False,
+                            'caesar': True,
+                            'leek': False,
+                            'substitution_cipher' : False
+                        }
+                    user_data_cracked.append(result)
+                    user3_found = True     
+                shift_value += 1             
+                
+            # Checks whether the hashed password exists in shadow
+            for user, hashed_password in user_data.copy().items():
+                if  user != 'user3' and user != 'user7' and (hashed_password in hashes or hashed_password in leek_hashes):
+                    result = {
+                        "user": user,
+                        "hashed_password": hashed_password,
+                        "password": leetspeak(common_password) if (hashed_password in leek_hashes) else common_password,
+                        "salt": False,
+                        'caesar': False,
+                        'leek': (hashed_password in leek_hashes),
+                        'substitution_cipher' : False
+                    }
+                    user_data_cracked.append(result)
+                    del user_data[user]
+
+    end_time = time.time()  # Record the end time
+    elapsed_time = end_time - start_time  # Calculate the elapsed time
+    print(f"Cracking (caesar, leek and directly hashed) passwords took {elapsed_time} seconds")
+    print_user_data_cracked(user_data_cracked)
+    print('################################################################################')
+
+    #--------------------------------------
+    start_time = time.time() 
+    # Generate all possible salts (numeric, 5 digits)
+    possible_salts = [str(i).zfill(5) for i in range(10**5)]
+
+    for common_password in common_passwords:
+        # Try all possible salts
+        for salt in possible_salts:
+            # Generate hashes for the password with the salt
+            hashes = hash_password(common_password+str(salt))
+            caesar_hashes = hash_password(caesar_cipher(common_password,5)+str(salt))
+            leek_hashes = hash_password(leetspeak(common_password)+str(salt))
+
+            # Checks whether the hashed password exists in shadow
+            for user, hashed_password in user_data.copy().items():
+                if hashed_password in hashes or hashed_password in caesar_hashes or hashed_password in leek_hashes:
+                    result = {
+                        "user": user,
                         "hashed_password": hashed_password,
                         "password": common_password,
-                        "salt": False,
-                        'caesar': True,
-                        'leek': False
+                        "salt": salt,
+                        'caesar': False,
+                        'leek': False,
+                        'substitution_cipher' : False
                     }
-                user_data_cracked.append(result)
-                user3_found = True     
-            shift_value += 1             
-            
-        # Checks whether the hashed password exists in shadow
-        for user, hashed_password in user_data.copy().items():
-            if  user != 'user3' and (hashed_password in hashes or hashed_password in leek_hashes):
-                result = {
-                    "user": user,
-                    "hashed_password": hashed_password,
-                    "password": common_password,
-                    "salt": False,
-                    'caesar': False,
-                    'leek': (hashed_password in leek_hashes)
-                }
-                user_data_cracked.append(result)
-                del user_data[user]
+                    user_data_cracked.append(result)
+                    del user_data[user]
 
-end_time = time.time()  # Record the end time
-elapsed_time = end_time - start_time  # Calculate the elapsed time
-print(f"Cracking (caesar, leek and directly hashed) passwords took {elapsed_time} seconds")
-print_user_data_cracked(user_data_cracked)
-print('################################################################################')
+    end_time = time.time()  # Record the end time
+    elapsed_time = end_time - start_time  # Calculate the elapsed time
+    print(f"Cracking salted passwords took {elapsed_time} seconds")
+    print_user_data_cracked(user_data_cracked)
+    print('################################################################################')
 
-#--------------------------------------
-start_time = time.time() 
-# Generate all possible salts (numeric, 5 digits)
-possible_salts = [str(i).zfill(5) for i in range(10**5)]
-
-for common_password in common_passwords:
-    # Try all possible salts
-    for salt in possible_salts:
-        # Generate hashes for the password with the salt
-        hashes = hash_password(common_password+str(salt))
-        caesar_hashes = hash_password(caesar_cipher(common_password,5)+str(salt))
-        leek_hashes = hash_password(leetspeak(common_password)+str(salt))
-
-        # Checks whether the hashed password exists in shadow
-        for user, hashed_password in user_data.copy().items():
-            if hashed_password in hashes or hashed_password in caesar_hashes or hashed_password in leek_hashes:
-                result = {
-                    "user": user,
-                    "hashed_password": hashed_password,
-                    "password": common_password,
-                    "salt": salt,
-                    'caesar': '',
-                    'leek': ''
-                }
-                user_data_cracked.append(result)
-                del user_data[user]
-
-end_time = time.time()  # Record the end time
-elapsed_time = end_time - start_time  # Calculate the elapsed time
-print(f"Cracking salted passwords took {elapsed_time} seconds")
-print_user_data_cracked(user_data_cracked)
-print('################################################################################')
-
-'''
-Based on the reuslts of TASK 2, now we can crack user7's password too.
-I have imported, from the analysis.py file, all the necessary code to encrypt a ptx to a ctx using substitution cipher; 
-plus, all the necessary data structures.
-'''
-
-def find_key_by_value(dictionary, target_value):
-    for key in dictionary.keys():
-        if dictionary[key] == target_value:
-            return key
-    return target_value  # Return target_value if the value is not found
-
-def encrypt_substitution_cipher(mapping, plaintext):
-    ciphertext = ''
-    for char in plaintext:
-        if char.isalpha():
-            ciphertext += find_key_by_value(mapping, char)
-        else:
-            ciphertext += char
-    return ciphertext
-
-guessed_mapping =   { 
-                    # 'h': 'e', # most occuring letter: _____ now not necessary anymore
-                    'm':'i', # most occuring one-letter word is either 'e' or 'i'
-                    # 's':'a', # second most occuring one-letter word is either 'e' 't' 'a' or 'o', from the context we can guess it is 'a': ______ now not necessary anymore
-                    'b': 't', 'c': 'h', 'h': 'e',  # most occuring two-letter word is 'the'
-                    's': 'a', 'j': 'n', 'r':'d',  # second occuring two-letter word is 'and'
-          
-                    'd': 's',   # guess based on text
-                    'u': 'v',   # guess based on text
-                    'q': 'f',   # guess based on text
-                    'e':'o',    # guess based on text
-                    'y':'r',    # guess based on text
-                    'a': 'g',   # guess based on text
-                    'z': 'u',   # guess based on text
-                    'v':'l',    # guess based on text
-                    'x': 'b',   # guess based on text
-                    'o': 'w',   # guess based on text
-                    'g': 'p',   # guess based on text
-                    'l': 'y',   # guess based on text
-                    'w':'c',    # guess based on text
-                    'f': 'm',   # guess based on text
-                    'k': 'q',   # guess based on text
-                    'n': 'z',   # guess based on text
-
-                    # in the partially decrypted_text there is 'tnocting' -> should be 'knocking'; thus, 't' to 'k' represents a viable mapping
-                    't': 'k',
-
-                    # missing letters: 'i' and 'p'. Let's assume they do not change.
-                    'i': 'i',
-                    'p': 'p'
-                
-                    } 
-
-
-start_time = time.time() 
-for common_password in common_passwords:
-        
-    hashes = hash_password(encrypt_substitution_cipher(guessed_mapping, common_password))
-
-    if user_data['user7'] in hashes:
-        result = {
-                "user": 'user7',
-                "hashed_password": user_data['user7'],
-                "password": common_password,
-                "salt": False,
-                'caesar': False,
-                'leek': False
-            }
-        user_data_cracked.append(result)
-        del user_data['user7']
-        break
-
-end_time = time.time()  # Record the end time
-elapsed_time = end_time - start_time  # Calculate the elapsed time
-print(f"Cracking user7 password took {elapsed_time} seconds")
-print_user_data_cracked(user_data_cracked)
-print('################################################################################')
-
-# Call the function to save the passwords to the file
-save_passwords_to_file(user_data_cracked)
-print('Saved users and their passwords in passwords.txt')
+    # Call the function to save the passwords to the file
+    save_passwords_to_file(user_data_cracked)
+    print('Saved users and their passwords in passwords.txt')

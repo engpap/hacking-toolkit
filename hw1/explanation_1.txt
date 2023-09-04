@@ -1,0 +1,33 @@
+In my code, I've implemented several password-cracking techniques to decrypt hashed passwords for users 1 to 6. Here's how I approached the task, along with some insights:
+
+First, I retrieved the hashed passwords from the "shadow" file and stored them in a dictionary called `user_data`. I obtained the list of common passwords from "dictionary.txt" and stored them in the `common_passwords` list.
+
+Next, I created a function called `hash_password` to compute hash values for passwords using various hashing algorithms, including MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3, Blake2s, and Blake2b (you can see the full list in the Python file).
+
+To crack the passwords, I iterated through the common passwords and attempted different approaches:
+
+1. Direct Hash Comparison:
+	- For each user (except for user3 and user7), I compared the hashes of common passwords and their leetspeak variations with the hashes stored in `user_data`.
+	- If a match was found, I added the cracked password to the `user_data_cracked` list.
+
+2. Caesar Cipher Decryption:
+	- I implemented a Caesar cipher decryption loop to generate potential password variations (based on varying `shift_value`) and compared their hashes to those in `user_data`.
+	- If a match was found for 'user3', I added the cracked password to the `user_data_cracked` list.
+	- These iterations were restricted to user3 (given the specifications).
+
+Steps 1 and 2 took: !!!!!!!!!!!COMPLETE!!!!!!!!
+
+3. Salted Password Cracking:
+	- I generated all possible numeric salts (5 digits) and combined them with common passwords.
+	- Then, I computed hashes for these salted passwords and compared them to the hashes in `user_data`.
+	- If a match was found, I added the cracked password to `user_data_cracked`.
+	- This required a lot of time because of the huge amount of possible combinations.
+
+Step 3 took: !!!!!!!!!!!COMPLETE!!!!!!!!
+
+For each cracking technique, I measured the execution time using the `time.time()` function and reported the results, including which type of password transformation was used (salting, caesar, leekspeak).
+
+Finally, I saved the cracked usernames and passwords to a file named "passwords.txt".
+
+One challenge I encountered was ensuring that the code was efficient, especially when dealing with a large number of common passwords and potential salts. I had to carefully manage the `user_data` dictionary to remove cracked users to avoid unnecessary iterations on already cracked users in the subsequent loops.
+

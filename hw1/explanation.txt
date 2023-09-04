@@ -1,0 +1,44 @@
+In my code for decrypting the "encrypted.txt" file, I've implemented several tasks to analyze the text and make smart guesses for decrypting it. Here's an overview of my approach and the challenges I encountered:
+
+1. Letter Occurrence Analysis:
+	- I read the contents of the "encrypted.txt" file, converted the text to lowercase for case insensitivity (even if it was already lowercase), and counted the occurrences of each letter in the text.
+	- I displayed the sorted letter occurrences to identify the most frequent letters and their frequencies.
+
+2. Comparison with English Dictionary:
+	- I compared the letter frequencies in the encrypted text with those in an English dictionary to make initial mappings based on the most occurring letters.
+   	- I used this source: https://pi.math.cornell.edu/~mec/2003-2004/cryptography/subs/frequencies.html and stored the English dictionary information in a "frequency" file.
+
+3. Mapping the Most Occurring Letters:
+   	- I created a mapping of the most occurring letters in the encrypted text to their corresponding English letters. This was not the final mapping, but helped me to understand potential mappings in the text.
+
+4. Analyzing Possible Mappings Based on Common Words:
+	- I extracted words from the encrypted text and counted their occurrences.
+	- I identified the 10 most common words in the encrypted text.
+	- I used this source: https://www3.nd.edu/~busiforc/handouts/cryptography/cryptography%20hints.html
+	- This source helped me establish potential letter mappings by comparing the most frequent words in the encrypted text to those in the English language.
+
+5. Substitution Cipher Mapping:
+	- I manually created a substitution cipher mapping, taking into account the analysis of the most occurring letters, common words, and some trial-and-error guessing.
+
+6. Decrypting Text:
+	- I used the guessed substitution cipher mapping to decrypt the text and display the partially decrypted text.
+
+7. Re-Encrypting Text:
+	- I re-encrypted the decrypted text using the guessed mapping and compared with the original encrypted text to ensure correctness.
+
+8. Saving the Decrypted Text:
+	- I saved the decrypted text to a file named "plaintext.txt."
+
+The final version of the code decrypts the text and provides a plausible mapping for substitution cipher decryption.
+
+9. Substitution Cipher Decryption:
+	- Here I used utility functions of the "password_cracker.py" file.
+	- To crack user7's password: for each common password in the "dictionary.txt", I encrypted it using the substitution cipher mapping (`guessed_mapping`). Then, I hashed it and compared it to the hash in `user_data`.
+	- These iterations were restricted to user7 (given the specifications).
+
+Step 4 took: !!!!!!!!!!!COMPLETE!!!!!!!!
+
+
+The main challenge I faced was accurately mapping the letters in the encrypted text to their English counterparts. This required a combination of statistical analysis, trial-and-error approach, and making smart guesses based on the context of the text.
+
+NOTE: In the guessed mapping, I also included some letters that were absent in the encrypted text, assigning them a default value of '-', indicating missing information.
