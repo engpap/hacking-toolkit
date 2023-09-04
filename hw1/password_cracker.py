@@ -117,7 +117,7 @@ def save_passwords_to_file(user_data_cracked):
     # Order by username
     user_data_cracked.sort(key=lambda x: x['user'])
 
-    with open('/hw1/passwords.txt', 'w') as file:
+    with open('passwords.txt', 'w') as file:
         for entry in user_data_cracked:
             username = entry['user']
             password = entry['password']
