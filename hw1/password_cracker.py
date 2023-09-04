@@ -129,7 +129,6 @@ common_passwords = get_common_passwords()
 user_data_cracked = []
 
 
-
 '''
 IDEA
 For each word in the dictionary of common password, we hash it different using hashing algorithms, md5, sha1, sha25.
@@ -179,7 +178,6 @@ print(f"Cracking took {elapsed_time} seconds")
 #print_user_data_cracked(user_data_cracked)
 
 #--------------------------------------
-
 start_time = time.time() 
 # Generate all possible salts (numeric, 5 digits)
 possible_salts = [str(i).zfill(5) for i in range(10**5)]
@@ -209,10 +207,85 @@ for common_password in common_passwords:
 end_time = time.time()  # Record the end time
 elapsed_time = end_time - start_time  # Calculate the elapsed time
 print(f"Cracking salted passwords took {elapsed_time} seconds")
+
+
+'''
+Based on the reuslts of TASK 2, now we can crack user7's password too.
+I have imported, from the analysis.py file, all the necessary code to encrypt a ptx to a ctx using substitution cipher; 
+plus, all the necessary data structures.
+'''
+
+def find_key_by_value(dictionary, target_value):
+    for key in dictionary.keys():
+        if dictionary[key] == target_value:
+            return key
+    return target_value  # Return target_value if the value is not found
+
+def encrypt_substitution_cipher(mapping, plaintext):
+    ciphertext = ''
+    for char in plaintext:
+        if char.isalpha():
+            ciphertext += find_key_by_value(mapping, char)
+        else:
+            ciphertext += char
+    return ciphertext
+
+guessed_mapping =   { 
+                    # 'h': 'e', # most occuring letter: _____ now not necessary anymore
+                    'm':'i', # most occuring one-letter word is either 'e' or 'i'
+                    # 's':'a', # second most occuring one-letter word is either 'e' 't' 'a' or 'o', from the context we can guess it is 'a': ______ now not necessary anymore
+                    'b': 't', 'c': 'h', 'h': 'e',  # most occuring two-letter word is 'the'
+                    's': 'a', 'j': 'n', 'r':'d',  # second occuring two-letter word is 'and'
+          
+                    'd': 's',   # guess based on text
+                    'u': 'v',   # guess based on text
+                    'q': 'f',   # guess based on text
+                    'e':'o',    # guess based on text
+                    'y':'r',    # guess based on text
+                    'a': 'g',   # guess based on text
+                    'z': 'u',   # guess based on text
+                    'v':'l',    # guess based on text
+                    'x': 'b',   # guess based on text
+                    'o': 'w',   # guess based on text
+                    'g': 'p',   # guess based on text
+                    'l': 'y',   # guess based on text
+                    'w':'c',    # guess based on text
+                    'f': 'm',   # guess based on text
+                    'k': 'q',   # guess based on text
+                    'n': 'z',   # guess based on text
+
+                    # in the partially decrypted_text there is 'tnocting' -> should be 'knocking'; thus, 't' to 'k' represents a viable mapping
+                    't': 'k',
+
+                    # missing letters: 'i' and 'p'. Let's assume they do not change.
+                    'i': 'i',
+                    'p': 'p'
+                
+                    } 
+
+
+start_time = time.time() 
+for common_password in common_passwords:
+        
+    hashes = hash_password(encrypt_substitution_cipher(guessed_mapping, common_password))
+
+    if user_data['user7'] in hashes:
+        result = {
+                "user": 'user7',
+                "hashed_password": user_data['user7'],
+                "password": common_password,
+                "salt": False,
+                'caesar': False,
+                'leek': False
+            }
+        user_data_cracked.append(result)
+        del user_data['user7']
+        break
+
+end_time = time.time()  # Record the end time
+elapsed_time = end_time - start_time  # Calculate the elapsed time
+print(f"Cracking user7 password took {elapsed_time} seconds")
 print_user_data_cracked(user_data_cracked)
 
 # Call the function to save the passwords to the file
 save_passwords_to_file(user_data_cracked)
-
-# TASK 2
-
