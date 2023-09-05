@@ -194,7 +194,7 @@ if __name__ == "__main__":
     assert encrypted_text == encrypt_substitution_cipher(guessed_mapping, get_decrypted_text(guessed_mapping)), ">>> WARNING: WRONG DECRYPTION!"
 
     # Open the file in write mode ('w')
-    with open('plaintext.txt', 'w') as file:
+    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/plaintext.txt', 'w') as file:
         # Write decrypted text to the file
         file.write(get_decrypted_text(guessed_mapping))
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
     # Append a line of text to the end of the file
     # We do not use the `save_passwords_to_file` function in `password_cracker` file because it would overwrite the file.
-    with open('passwords.txt', 'a') as file:
+    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/passwords.txt', 'a') as file:
         for entry in user_data_cracked: 
             username = entry['user']
             password = entry['password']

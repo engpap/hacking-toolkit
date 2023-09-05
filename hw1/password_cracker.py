@@ -114,7 +114,7 @@ def save_passwords_to_file(user_data_cracked):
     # Order by username
     user_data_cracked.sort(key=lambda x: x['user'])
 
-    with open('passwords.txt', 'w') as file:
+    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/passwords.txt', 'w') as file:
         for entry in user_data_cracked:
             username = entry['user']
             password = entry['password']
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     print_user_data_cracked(user_data_cracked)
     print('################################################################################')
 
-    #--------------------------------------
+    '''#--------------------------------------
     start_time = time.time() 
     # Generate all possible salts (numeric, 5 digits)
     possible_salts = [str(i).zfill(5) for i in range(10**5)]
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     print(f"Cracking salted passwords took {elapsed_time} seconds")
     print_user_data_cracked(user_data_cracked)
     print('################################################################################')
-
+'''
     # Call the function to save the passwords to the file
     save_passwords_to_file(user_data_cracked)
     print('Saved users and their passwords in passwords.txt')
