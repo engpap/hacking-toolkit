@@ -2,7 +2,6 @@ import hashlib
 import time
 
 def get_hashed_passwords():
-    # Define an empty dictionary to store the key-value pairs
     user_data = {}
 
     # File path where shadow file is stored
@@ -27,7 +26,6 @@ def get_hashed_passwords():
 
 
 def get_common_passwords():
-    # Initialize an empty list to store the data
     data_list = []
 
     # File path where the dictionary of password is stored
@@ -93,7 +91,6 @@ def leetspeak(word):
         'g': '9',
     }
     
-    # Empty string to store the leetspeak word
     leetspeak_word = ""
     
     # Iterate through each character in the input word
@@ -142,7 +139,7 @@ if __name__ == "__main__":
             hashes = hash_password(common_password)
             leek_hashes = hash_password(leetspeak(common_password))
             
-            user3_found = False # to exit the loop as soon as it is found
+            user3_found = False # To exit the loop as soon as it is found
             shift_value = 1
             while shift_value<26 and not user3_found:
                 caesar_hashes = hash_password(caesar_cipher(common_password,shift_value))

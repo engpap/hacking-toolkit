@@ -53,7 +53,7 @@ def find_double_consecutive_letters(words):
         for i in range(len(word) - 1):
             if word[i] == word[i + 1]:
                 result.append(word)
-                break  # We found a double consecutive letter, no need to check further in this word.
+                break  # We found a double consecutive letter, no need to check further in this word
     
     return result
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     '''
     Print the occurences of the letters in the encrypted text (and plot them on a histogram) to do analytics.
     '''
-    file_path = "/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/hw1_files/encrypted.txt"  # Replace with the path to your text file
+    file_path = "/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/hw1_files/encrypted.txt"
     with open(file_path, 'r') as file:
         encrypted_text = file.read().lower()  # Read the file and convert to lowercase for case insensitivity
 
@@ -154,33 +154,34 @@ if __name__ == "__main__":
     Then, by reading the partially decrypted text, I guessed (using a trial-and-error approach) the remaining mappings.
     '''
     guessed_mapping =   { 
-                        # 'h': 'e', # most occuring letter: _____ now not necessary anymore
-                        'm':'i', # most occuring one-letter word is either 'e' or 'i'
-                        # 's':'a', # second most occuring one-letter word is either 'e' 't' 'a' or 'o', from the context we can guess it is 'a': ______ now not necessary anymore
-                        'b': 't', 'c': 'h', 'h': 'e',  # most occuring two-letter word is 'the'
-                        's': 'a', 'j': 'n', 'r':'d',  # second occuring two-letter word is 'and'
+                        # 'h': 'e', # Most occuring letter: _____ now not necessary anymore because of 'the'
+                        'm':'i',    # Most occuring one-letter word is either 'e' or 'i'
+                        # 's':'a',  # Second most occuring one-letter word is either 'e' 't' 'a' or 'o', from the context we can guess it is 'a': ______ now not necessary anymore because of 'and'
+                        'b': 't', 'c': 'h', 'h': 'e',   # Most occuring two-letter word is 'the'
+                        's': 'a', 'j': 'n', 'r':'d',    # Second occuring two-letter word is 'and'
             
-                        'd': 's',   # guess based on text
-                        'u': 'v',   # guess based on text
-                        'q': 'f',   # guess based on text
-                        'e':'o',    # guess based on text
-                        'y':'r',    # guess based on text
-                        'a': 'g',   # guess based on text
-                        'z': 'u',   # guess based on text
-                        'v':'l',    # guess based on text
-                        'x': 'b',   # guess based on text
-                        'o': 'w',   # guess based on text
-                        'g': 'p',   # guess based on text
-                        'l': 'y',   # guess based on text
-                        'w':'c',    # guess based on text
-                        'f': 'm',   # guess based on text
-                        'k': 'q',   # guess based on text
-                        'n': 'z',   # guess based on text
+                        'd': 's',   # Guess based on text
+                        'u': 'v',   # Guess based on text
+                        'q': 'f',   # Guess based on text
+                        'e':'o',    # Guess based on text
+                        'y':'r',    # Guess based on text
+                        'a': 'g',   # Guess based on text
+                        'z': 'u',   # Guess based on text
+                        'v':'l',    # Guess based on text
+                        'x': 'b',   # Guess based on text
+                        'o': 'w',   # Guess based on text
+                        'g': 'p',   # Guess based on text
+                        'l': 'y',   # Guess based on text
+                        'w':'c',    # Guess based on text
+                        'f': 'm',   # Guess based on text
+                        'k': 'q',   # Guess based on text
+                        'n': 'z',   # Guess based on text
 
-                        # in the partially decrypted_text there is 'tnocting' -> should be 'knocking'; thus, 't' to 'k' represents a viable mapping
+                        # In the partially decrypted_text there is 'tnocting' -> should be 'knocking'; thus, 't' to 'k' represents a viable mapping
                         't': 'k',
 
-                        # missing letters: 'i' and 'p'. '-' indicates missing information.
+                        # Missing letters: 'i' and 'p'
+                        # '-' indicates missing information
                         'i': '-',
                         'p': '-'
                     

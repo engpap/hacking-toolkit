@@ -36,7 +36,7 @@ The final version of the code decrypts the text and provides a plausible mapping
 	- To crack user7's password: for each common password in the "dictionary.txt", I encrypted it using the substitution cipher mapping (`guessed_mapping`). Then, I hashed it and compared it to the hash in `user_data`.
 	- These iterations were restricted to user7 (given the specifications).
 
-Step 4 took: !!!!!!!!!!!COMPLETE!!!!!!!!
+Step 9 took: 0.03 seconds
 
 
 The main challenge I faced was accurately mapping the letters in the encrypted text to their English counterparts. This required a combination of statistical analysis, trial-and-error approach, and making smart guesses based on the context of the text.
