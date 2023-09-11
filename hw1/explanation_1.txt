@@ -23,7 +23,7 @@ Steps 1 and 2 took: 0.9 seconds
 	- If a match was found, I added the cracked password to `user_data_cracked`.
 	- This required a lot of time because of the huge amount of possible combinations.
 
-Step 3 took: 9543 seconds = around 2 hours and 40 minutes
+Step 3 took: 2934 seconds = around 50 minutes
 
 For each cracking technique, I measured the execution time using the `time.time()` function and reported the results, including which type of password transformation was used (salting, caesar, leekspeak).
 

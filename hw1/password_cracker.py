@@ -178,7 +178,7 @@ if __name__ == "__main__":
     print_user_data_cracked(user_data_cracked)
     print('################################################################################')
 
-    '''#--------------------------------------
+    #--------------------------------------
     start_time = time.time() 
     # Generate all possible salts (numeric, 5 digits)
     possible_salts = [str(i).zfill(5) for i in range(10**5)]
@@ -188,12 +188,10 @@ if __name__ == "__main__":
         for salt in possible_salts:
             # Generate hashes for the password with the salt
             hashes = hash_password(common_password+str(salt))
-            caesar_hashes = hash_password(caesar_cipher(common_password,5)+str(salt))
-            leek_hashes = hash_password(leetspeak(common_password)+str(salt))
 
             # Checks whether the hashed password exists in shadow
             for user, hashed_password in user_data.copy().items():
-                if hashed_password in hashes or hashed_password in caesar_hashes or hashed_password in leek_hashes:
+                if hashed_password in hashes:
                     result = {
                         "user": user,
                         "hashed_password": hashed_password,
@@ -211,7 +209,7 @@ if __name__ == "__main__":
     print(f"Cracking salted passwords took {elapsed_time} seconds")
     print_user_data_cracked(user_data_cracked)
     print('################################################################################')
-'''
+
     # Call the function to save the passwords to the file
     save_passwords_to_file(user_data_cracked)
     print('Saved users and their passwords in passwords.txt')
