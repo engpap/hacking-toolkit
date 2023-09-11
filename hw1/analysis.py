@@ -5,6 +5,10 @@ from collections import Counter
 
 from password_cracker import get_common_passwords, get_hashed_passwords, hash_password, print_user_data_cracked, save_passwords_to_file
 
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 '''
 Utility functions
 '''
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     '''
     Print the occurences of the letters in the encrypted text (and plot them on a histogram) to do analytics.
     '''
-    file_path = "/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/hw1_files/encrypted.txt"
+    file_path = os.path.join(current_dir, 'encrypted.txt')
     with open(file_path, 'r') as file:
         encrypted_text = file.read().lower()  # Read the file and convert to lowercase for case insensitivity
 
@@ -97,7 +101,8 @@ if __name__ == "__main__":
     '''
     english_dict_letter_values = {}
 
-    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/frequency', 'r') as file:
+    file_path = os.path.join(current_dir, 'frequency')
+    with open(file_path, 'r') as file:
         # Iterate over each line in the file
         for line in file:
             # Split the line into letter and value using '=' as the separator
@@ -194,7 +199,8 @@ if __name__ == "__main__":
     assert encrypted_text == encrypt_substitution_cipher(guessed_mapping, get_decrypted_text(guessed_mapping)), ">>> WARNING: WRONG DECRYPTION!"
 
     # Open the file in write mode ('w')
-    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/plaintext.txt', 'w') as file:
+    file_path = os.path.join(current_dir, 'plaintext.txt')
+    with open(file_path, 'w') as file:
         # Write decrypted text to the file
         file.write(get_decrypted_text(guessed_mapping))
 
@@ -208,14 +214,15 @@ if __name__ == "__main__":
 
     start_time = time.time() 
     for common_password in common_passwords:
-            
-        hashes = hash_password(encrypt_substitution_cipher(guessed_mapping, common_password))
+        
+        encrypted_password = encrypt_substitution_cipher(guessed_mapping, common_password)
+        hashes = hash_password(encrypted_password)
 
         if user_data['user7'] in hashes:
             result = {
                     "user": 'user7',
                     "hashed_password": user_data['user7'],
-                    "password": common_password,
+                    "password": encrypted_password,
                     "salt": False,
                     'caesar': False,
                     'leek': False,
@@ -233,7 +240,8 @@ if __name__ == "__main__":
 
     # Append a line of text to the end of the file
     # We do not use the `save_passwords_to_file` function in `password_cracker` file because it would overwrite the file.
-    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/passwords.txt', 'a') as file:
+    file_path = os.path.join(current_dir, 'passwords.txt')
+    with open(file_path, 'a') as file:
         for entry in user_data_cracked: 
             username = entry['user']
             password = entry['password']

@@ -1,11 +1,14 @@
 import hashlib
 import time
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_hashed_passwords():
     user_data = {}
 
     # File path where shadow file is stored
-    file_path = '/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/hw1_files/shadow'
+    file_path = os.path.join(current_dir, 'shadow')
 
     # Open and read the file line by line
     with open(file_path, 'r') as file:
@@ -29,7 +32,7 @@ def get_common_passwords():
     data_list = []
 
     # File path where the dictionary of password is stored
-    file_path = '/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/hw1_files/dictionary.txt' 
+    file_path = os.path.join(current_dir, 'dictionary.txt')
 
     # Open and read the file line by line
     with open(file_path, 'r') as file:
@@ -114,7 +117,9 @@ def save_passwords_to_file(user_data_cracked):
     # Order by username
     user_data_cracked.sort(key=lambda x: x['user'])
 
-    with open('/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw1/passwords.txt', 'w') as file:
+    file_path = os.path.join(current_dir, 'passwords.txt')
+
+    with open(file_path, 'w') as file:
         for entry in user_data_cracked:
             username = entry['user']
             password = entry['password']
@@ -142,12 +147,13 @@ if __name__ == "__main__":
             user3_found = False # To exit the loop as soon as it is found
             shift_value = 1
             while shift_value<26 and not user3_found:
-                caesar_hashes = hash_password(caesar_cipher(common_password,shift_value))
+                enctypted_pass = caesar_cipher(common_password,shift_value)
+                caesar_hashes = hash_password(enctypted_pass)
                 if user_data['user3'] in caesar_hashes:
                     result = {
                             "user": 'user3',
                             "hashed_password": hashed_password,
-                            "password": common_password,
+                            "password": enctypted_pass,
                             "salt": False,
                             'caesar': True,
                             'leek': False,
@@ -195,7 +201,7 @@ if __name__ == "__main__":
                     result = {
                         "user": user,
                         "hashed_password": hashed_password,
-                        "password": common_password,
+                        "password": common_password+str(salt),
                         "salt": salt,
                         'caesar': False,
                         'leek': False,
