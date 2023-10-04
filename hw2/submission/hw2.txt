@@ -1,0 +1,40 @@
+1 : Result: 282. Solution: To get the packets send by 198.105.254.25 we can filter in the Wireshark interface by using `ip.src == 198.105.254.25`. By doing so 282 are displayed. We can get this number in the bottom right of the program. 
+
+2: Result: Apple_01:a5:c9 (d8:96:95:01:a5:c9). Solution: To get the source MAC address of the machine generating the ARP packets, we can just filter the ARP packets by typing `arp` in the Wireshark interface and then checking the 'Source' column of the filtered packets.
+
+3: Result: inxE3QsNHa. Solution: By typing `ip.src==143.244.131.1 or ip.dst==143.244.131` in the filter bar, we can get the packets where the target ip has been the source or destination. By inspecting the filteted packets we can see packet 5731 that is HTTP POST request containing a session cookie of 'inxE3QsNHa'.
+
+4: Result: 'www.map.wisc.edu', 'net.educause.edu'. Solution: To filter DNS queries for the domain name '.edu' in Wireshark, we can type `dns.qry.name contains ".edu"` in the filter bar. By inspecting the filtered packets we can see packet 4568 and 5725 that are DNS queries. The first has domain name 'www.map.wisc.edu' and the last has 'net.educause.edu'.
+
+5: Result: username=iamauser&password=b9703614d138ef18234e74df390c58b39a63b10ac56134d56e61d097; the password in clear is `billiard`. Solution: Thea idea is to filter packets that used http and contians 'username' in the data section. Thus, we filter by `http and frame contains "username"`. Applying the tools of Assignment-1 we get the password in clear, which is `billiard`.
+
+6: Result: (see zip archive) Solution: By filtering packets using `http.request.uri == "/images/img.jpeg"` we are able to get the request for /images/image.jpeg. In the packet request (more specifically in the Hypertext Transfer Protocol section), we can see which is the frame that contains the response (in this case 5805). Then by clicking on Wireshark -> File -> Export Object -> HTTP and by finding the response frame (in this case 5805), we can export the image and save it to our desktop.
+
+7: cs155@dummymail.com. Solution: By filtering packets using `pop` we are able to get the packets using the POP protocol. Thus, we are able to inspect the POP session. We can see that packet 6930 is trying to authenticate using cs155@dummymail.com. We can infer this by looking at the packet's request command (which is 'user') inside the Post Office Protocol section.
+
+8: whitehat. Solution: By filtering packets using `pop` we are able to get the packets using the POP protocol. Thus, we are able to inspect the POP session. We can see that packet 7381 is trying to authenticate by sending its password. We can infer this by looking at the packet's request command (which is 'pass') inside the Post Office Protocol section.
+
+9: 5. Solution: By filtering packets using `pop` we are able to get the packets using the POP protocol. Thus, we are able to inspect the POP session. Then we need to look at the packet response of the request containing 'stat' as request command. Indeed, this command returns total number of messages and total size. Packet 8144 has these characteristics and tell us that there are 5 messages.
+
+10: Result: (see zip archive). Solution: Open Wireshark and start capturing live traffic. Execute `curl http://example.com` in the terminal, when there's a response, terminate the capture. Then, filter any unnecessary	packets using `editcap -r {source file} {destination file} {packets/frames you want to keep}`.
+
+11: Result: tcpdump -n -r trace1.pcap src host 131.253.40.84
+
+12: Result: tcpdump -n -r trace1.pcap dst port 80
+
+13: Result: tcpdump -n -r trace1.pcap arp
+
+14: Result: tcpdump -n -r trace1.pcap dst host 74.125.225.81 and dst port 443
+
+15: Result: Open ports are: 22,25,80,443. Solution:  By typing `nmap -p- scannme.insecure.org` in the Zenmap GUI we get the list of open ports. The commands `-p-` allows to scan all the 65535 ports.
+
+16: Result: `nmap -sU -p- scannme.insecure.org`. Solution: With this command, nmap sends 0-byte UDP packets to each of the 65535 ports on the target system. Receipt of an ICMPv4 Destination Unreachable/Port Unreachable (Type 3, Code 3) message signifies the port is closed; otherwise it is assumed open.
+
+17: Result: Linux. Solution: By typing `nmap -O scannme.insecure.org` we get data that indicate that the host is running a Linux-based operating system, with multiple guesses made about the Linux kernel versions. More specifically, we got the following output: `
+Running (JUST GUESSING): Linux 2.6.X|3.X|4.X (86%), IPCop 2.X (86%), Tiandy embedded (85%)
+OS CPE: cpe:/o:linux:linux_kernel:2.6.32 cpe:/o:ipcop:ipcop:2.0 cpe:/o:linux:linux_kernel:3.2 cpe:/o:linux:linux_kernel:4.9
+Aggressive OS guesses: IPCop 2.0 (Linux 2.6.32) (86%), Linux 2.6.32 (86%), Linux 3.2 (86%), Linux 4.9 (86%), Tiandy NVR (85%)`.
+
+
+
+
