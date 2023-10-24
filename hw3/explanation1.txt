@@ -1,0 +1,73 @@
+The code accepts some parameters in input.
+The interface on which to listen and the file of hostnames whose DNS responses needs to be forged.
+If params are not provied the default gateway intrface is set and all hostnames DNS resposnes are forged.
+
+Through the scpay library we are able to sniff packets on a speficif interface and of a specific type (DNS).
+
+Reference: https://www.geeksforgeeks.org/packet-sniffing-using-scapy/
+Reference: https://jasonmurray.org/posts/2020/scapydns/
+
+For each sniffed packet, we process it, we check wheter its resposne hsould be forged 
+(if the hostname is in the hostnames file or no hostnames file is provided).
+
+If the conditions are met, we send the DNS forged response. We build it using Scapy.
+The IP and UDP layers of the response packet are built by reversing the source and destination 
+addresses/ports from the original query packet. The DNS layer is built by copying the query ID 
+and queried domain name from the original packet, and setting the response fields appropriately.
+The an field is set to a DNSRR (DNS Resource Record) object containing the spoofed IP address for the queried domain.
+
+Reference: https://courses.cs.duke.edu//fall16/compsci356/DNS/DNS-primer.pdf
+
+
+Using `dig` we can verify that the response is actually forged on the second tentative.
+Reference: https://phoenixnap.com/kb/linux-dig-command-examples
+
+```
+debian@debian:~$ dig @1.1.1.1 foo1234.example.com
+
+; <<>> DiG 9.16.33-Debian <<>> @1.1.1.1 foo1234.example.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 25726
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;foo1234.example.com.		IN	A
+
+;; AUTHORITY SECTION:
+example.com.		3600	IN	SOA	ns.icann.org. noc.dns.icann.org. 2022091354 7200 3600 1209600 3600
+
+;; Query time: 32 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1)
+;; WHEN: Tue Oct 24 15:32:01 PDT 2023
+;; MSG SIZE  rcvd: 104
+
+debian@debian:~$ dig @1.1.1.1 foo1234.example.com
+
+; <<>> DiG 9.16.33-Debian <<>> @1.1.1.1 foo1234.example.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31781
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+
+;; QUESTION SECTION:
+;foo1234.example.com.		IN	A
+
+;; ANSWER SECTION:
+foo1234.example.com.	23	IN	A	23.23.0.0
+
+;; Query time: 20 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1)
+;; WHEN: Tue Oct 24 15:32:02 PDT 2023
+;; MSG SIZE  rcvd: 72
+```
+
+Where `foo1234.example.com` is the target website and `23.23.0.0` is the malicious address to be inserted in the forged DNS Response.
+
+Eventually, by analyzing `dns.cap` we can actually see two responses, the forged one with incorrect DNS resolution and
+one with the correct one indicating that there's no 1foo1234.example.com` name.
