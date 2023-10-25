@@ -1,0 +1,144 @@
+- October 24 2023 22:49:17
+- TXID 0x1637 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:17
+- TXID 0x1637 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:18
+- TXID 0x641b Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:18
+- TXID 0x641b Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:19
+- TXID 0x0f82 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:19
+- TXID 0x0f82 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:20
+- TXID 0x5a52 Request foo1234.example.com.- Legitimate responses: 23.23.0.0
+- Malicious responses: 
+
+- October 24 2023 22:49:20
+- TXID 0x5a52 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:24
+- TXID 0x177a Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 22:49:24
+- TXID 0x177a Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:19:51
+- TXID 0xa70e Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:19:51
+- TXID 0xa70e Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:19:52
+- TXID 0xa882 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:19:52
+- TXID 0xa882 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:19:52
+- TXID 0x8293 Request foo1234.example.com.- Legitimate responses: 23.23.0.0
+- Malicious responses: 
+
+- October 24 2023 23:19:52
+- TXID 0x8293 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:08
+- TXID 0xc1bd Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:08
+- TXID 0xc1bd Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:09
+- TXID 0x49d4 Request foo1234.example.com.- Legitimate responses: 23.23.0.0
+- Malicious responses: 
+
+- October 24 2023 23:21:09
+- TXID 0x49d4 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:09
+- TXID 0xd72f Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:09
+- TXID 0xd72f Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:27
+- TXID 0xf924 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:28
+- TXID 0xf924 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 24 2023 23:21:28
+- TXID 0xb098 Request foo1234.example.com.- Legitimate responses: 23.23.0.0
+- Malicious responses: 
+
+- October 24 2023 23:21:28
+- TXID 0xb098 Request foo1234.example.com.- Legitimate responses: 
+- Malicious responses: 23.23.0.0
+
+- October 25 2023 10:25:30
+- TXID 0x7bf3 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:25:32
+- TXID 0xb208 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:25:45
+- TXID 0x4536 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:25:46
+- TXID 0xcbaf Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:38:29
+- TXID 0xedd6 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:39:22
+- TXID 0x3941 Request foo1234.example.com.
+- Legitimate responses: None
+- Malicious responses: 23.23.0.0
+
+- October 25 2023 10:39:23
+- TXID 0x577b Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:39:24
+- TXID 0xbae4 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
