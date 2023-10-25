@@ -46,12 +46,13 @@ def packet_callback(packet):
     We don't check:
     - The source IP address (the attacker can spoof it)
     - Identification Value in the IP header (the attacker can spoof it)
+    - The number of answers in the DNS response (the attacker can spoof it)
     '''
     if packet.haslayer(DNS) and packet[DNS].qr == 1:  # DNS Response
         txid = packet[DNS].id
         queried_host = packet[DNS].qd.qname.decode('utf-8')
         ip_answer = extract_rdata(packet)
-        print(f">>> Analyzing Packet with: TXID 0x{txid:04x} Request {queried_host} Response {ip_answer}")
+        print(f">>> Analyzing Packet for {queried_host}")
 
         # If there's no answer in the DNS rdata field, just put 'None' so we can compare it later
         if not ip_answer:
@@ -70,7 +71,7 @@ def packet_callback(packet):
                         log_attack(queried_host, txid, prev_answers, ip_answer)
 
             dns_responses[queried_host].append((txid, ip_answer))
-            print_dns_respones(dns_responses)
+            #print_dns_respones(dns_responses)
 
 def print_dns_respones(dns_responses):
     print("DNS Responses:")
@@ -83,7 +84,7 @@ def print_dns_respones(dns_responses):
 def log_attack(domain, txid, legit_answers, malicious_answers):
     with open('attack_log.txt', 'a') as f:
         f.write(f"- {datetime.now():%B %d %Y %H:%M:%S}\n")
-        f.write(f"- TXID 0x{txid:04x} Request {domain}\n")
+        f.write(f"- TXID 0x{txid:04x} Request {domain[:-1]}\n")
         f.write(f"- Legitimate responses: {', '.join(legit_answers)}\n")
         f.write(f"- Malicious responses: {', '.join(malicious_answers)}\n")
         f.write("\n")

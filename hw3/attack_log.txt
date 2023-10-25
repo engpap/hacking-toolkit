@@ -142,3 +142,28 @@
 - Legitimate responses: 23.23.0.0
 - Malicious responses: None
 
+- October 25 2023 10:53:00
+- TXID 0xb25c Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:54:15
+- TXID 0x4468 Request foo1234.example.com.
+- Legitimate responses: None
+- Malicious responses: 23.23.0.0
+
+- October 25 2023 10:54:17
+- TXID 0x0b91 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:55:10
+- TXID 0x2d45 Request foo1234.example.com.
+- Legitimate responses: 23.23.0.0
+- Malicious responses: None
+
+- October 25 2023 10:55:46
+- TXID 0xf02c Request foo1234.example.com.
+- Legitimate responses: None
+- Malicious responses: 23.23.0.0
+
