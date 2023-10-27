@@ -1,0 +1,15 @@
+For each DNS response packet captured, the program analyzes the response.
+It extracts the transaction ID (TXID), the queried domain, and the response IP address(es).
+
+Attack Detection:
+The script maintains a dictionary to store information about previous DNS responses.
+For each new response, it checks if there is an existing entry with the same TXID and domain but different IP addresses.
+If such an entry is found, and the responses arrived within a defined time threshold, it raises an alert indicating a potential DNS poisoning attack.
+
+Avoiding False Positives:
+To avoid false positives, such as those that might be caused by DNS-based load balancing, the program only raises an alert if the DNS responses meet the attack detection criteria and arrive within a defined time threshold (0.01 seconds by default).
+
+Limitations and Assumptions:
+- The program assumes that if two DNS responses with the same TXID and queried domain but different IP addresses arrive within the specified time threshold, it could be a result of DNS-based load balancing and not an attack. This might not always be the case.
+- In order to log malicious and legitimate response, the program interprets the presence of a private IP address in a DNS resolution as an indication of a malicious response.
+- The program does not verify the authenticity of the DNS responses or the integrity of the DNS protocol itself.

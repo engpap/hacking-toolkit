@@ -23,9 +23,12 @@ attempts of DNS spoofing for all the requests of the local machine’s IP addres
 '''
 import sys
 import argparse
-from scapy.all import sniff, DNS, IP
+from scapy.all import sniff, DNS, IP, DNSRR
 from datetime import datetime
 import netifaces
+import ipaddress # To check if the IP address is private
+
+TIME_DIFF_THRESHOLD = 10  # Time threshold in seconds
 
 def extract_rdata(packet):
     if packet.haslayer(DNS) and packet[DNS].qr == 1:  # DNS Response
@@ -47,8 +50,11 @@ def packet_callback(packet):
     - The source IP address (the attacker can spoof it)
     - Identification Value in the IP header (the attacker can spoof it)
     - The number of answers in the DNS response (the attacker can spoof it)
+    How to avoid with false positive (Strategy):
+    If two DNS responses with the same TXID but different IP addresses arrive within TIME_DIFF_THRESHOLD of each other, they're considered part of DNS-based load balancing and not marked as an attack.
     '''
     if packet.haslayer(DNS) and packet[DNS].qr == 1:  # DNS Response
+        time_received = datetime.now()
         txid = packet[DNS].id
         queried_host = packet[DNS].qd.qname.decode('utf-8')
         ip_answer = extract_rdata(packet)
@@ -60,18 +66,49 @@ def packet_callback(packet):
 
         # If the queried host is not in the dictionary, add it, so later we can use it
         if queried_host not in dns_responses:
-            dns_responses[queried_host] = [(txid, ip_answer)] 
+            dns_responses[queried_host] = [(txid, ip_answer,  time_received, is_malicious(ip_answer))] 
         # If the queried host is in the dictionary, check if the TXID is the same
         else:
-            for prev_txid, prev_answers in dns_responses[queried_host]:
+            legit_answers = []
+            malicious_answers = []
+            for prev_txid, prev_answers, prev_timestamp, is_mal in dns_responses[queried_host]:
                 if txid == prev_txid:
+                    time_diff = time_received - prev_timestamp
+                    # if the time difference is within the threshold
+                    if time_diff.total_seconds() < TIME_DIFF_THRESHOLD:
                     # Same TXID, check if the responses are different
-                    if set(ip_answer) != set(prev_answers):
-                        # Answers are different, log the attack
-                        log_attack(queried_host, txid, prev_answers, ip_answer)
+                        if set(ip_answer) != set(prev_answers):
+                            # Answers are different, log the attack
+                            if is_mal:
+                                malicious_answers.append(prev_answers)
+                            else:
+                                legit_answers.append(prev_answers)
+                            if is_malicious(ip_answer):
+                                malicious_answers.append(ip_answer)
+                            else:
+                                legit_answers.append(ip_answer)
+                            log_attack(queried_host, txid, legit_answers, malicious_answers)
 
-            dns_responses[queried_host].append((txid, ip_answer))
-            #print_dns_respones(dns_responses)
+            dns_responses[queried_host].append((txid, ip_answer, time_received, is_malicious(ip_answer)))
+
+def is_malicious(ip_answer):
+    if 'None' in ip_answer:
+        print("here")
+        return False
+    if any([is_private_ip(ip) for ip in ip_answer]):
+        return True
+    else:
+        return False
+
+def is_private_ip(ip):
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        #print(f'IP  {ip} is private: {ip_obj.is_private}')
+        return ip_obj.is_private
+    except ValueError as e:
+        print(f"Invalid IP address: {e}")
+        return False
+
 
 def print_dns_respones(dns_responses):
     print("DNS Responses:")
@@ -82,11 +119,14 @@ def print_dns_respones(dns_responses):
     print("")
 
 def log_attack(domain, txid, legit_answers, malicious_answers):
+    print(f"Attack Detected: {domain} TXID 0x{txid:04x}")
     with open('attack_log.txt', 'a') as f:
         f.write(f"- {datetime.now():%B %d %Y %H:%M:%S}\n")
         f.write(f"- TXID 0x{txid:04x} Request {domain[:-1]}\n")
-        f.write(f"- Legitimate responses: {', '.join(legit_answers)}\n")
-        f.write(f"- Malicious responses: {', '.join(malicious_answers)}\n")
+        legit_answers_str = ', '.join([', '.join(map(str, ans)) for ans in legit_answers])
+        malicious_answers_str = ', '.join([', '.join(map(str, ans)) for ans in malicious_answers])
+        f.write(f"- Legitimate responses: {legit_answers_str}\n")
+        f.write(f"- Malicious responses: {malicious_answers_str}\n")
         f.write("\n")
     print(f"Attack Detected: {domain} TXID 0x{txid:04x}")
 
@@ -98,7 +138,7 @@ def get_default_interface():
         gateway_info = netifaces.gateways()
         default_gateway = gateway_info['default']
         if netifaces.AF_INET in default_gateway:
-            return default_gateway[netifaces.AF_INET][1]
+            return 'vmenet0' #default_gateway[netifaces.AF_INET][1] RESTOREEEEEE
         else:
             raise Exception("No IPv4 default gateway found")
     else:
