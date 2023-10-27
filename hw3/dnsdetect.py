@@ -46,6 +46,7 @@ def packet_callback(packet):
     - Different IP address in the rdata field (None when the address does not exist, for example when the domain does not exist)
     - Same domain name (done it by accessing the dictionary through the domain name as key)
     - The packet is a DNS response (qr == 1)
+    - If it has a private IP ==> Malicious, otherwise ==> Legitimate
     We don't check:
     - The source IP address (the attacker can spoof it)
     - Identification Value in the IP header (the attacker can spoof it)
