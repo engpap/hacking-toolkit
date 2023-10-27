@@ -1,19 +1,19 @@
-- October 27 2023 10:28:16
+- October 27 2023 11:43:38
 - TXID 0x1d3b Request impara.com
 - Answer1: 76.223.54.146, 13.248.169.48
 - Answer2: 10.2.2.2
 
-- October 27 2023 10:28:17
+- October 27 2023 11:43:38
 - TXID 0x8d60 Request impara.com
 - Answer1: 76.223.54.146, 13.248.169.48
 - Answer2: 10.2.2.2
 
-- October 27 2023 10:28:20
+- October 27 2023 11:43:38
 - TXID 0xa2a4 Request foo1234.example.com
 - Answer1: None
 - Answer2: 10.0.0.0
 
-- October 27 2023 10:28:26
+- October 27 2023 11:43:38
 - TXID 0x1f44 Request foo1234.example.com
 - Answer1: None
 - Answer2: 10.0.0.0
