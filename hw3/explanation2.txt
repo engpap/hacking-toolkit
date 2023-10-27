@@ -4,7 +4,7 @@ It extracts the transaction ID (TXID), the queried domain, and the response IP a
 Attack Detection:
 The script maintains a dictionary to store information about previous DNS responses.
 For each new response, it checks if there is an existing entry with the same TXID and domain but different IP addresses.
-If such an entry is found, and the responses arrived within a defined time threshold, it raises an alert indicating a potential DNS poisoning attack.
+If such an entry is found, and the responses arrived within a defined time threshold, it raises an alert indicating a potential DNS poisoning attack and logs it in a file.
 
 Avoiding False Positives:
 To avoid false positives, such as those that might be caused by DNS-based load balancing, the program only raises an alert if the DNS responses meet the attack detection criteria and arrive within a defined time threshold (0.1 seconds by default).
