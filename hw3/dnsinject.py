@@ -33,9 +33,9 @@ captured_packets = []
 
 
 def main():
-    parser = argparse.ArgumentParser(description='DNS Injector')
+    parser = argparse.ArgumentParser(description='DNS Injector', add_help=False)
     parser.add_argument('-i', '--interface', default=None, help='Network device interface (e.g., eth0).')
-    parser.add_argument('-f', '--hostnames', default=None, help='File containing IP address and hostname pairs.')
+    parser.add_argument('-h', '--hostnames', default=None, help='File containing IP address and hostname pairs.')
     
     args = parser.parse_args()
     print("Arguments: {}".format(args))
