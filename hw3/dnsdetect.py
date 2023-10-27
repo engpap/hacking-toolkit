@@ -28,7 +28,7 @@ from datetime import datetime
 import netifaces
 import ipaddress # To check if the IP address is private
 
-TIME_DIFF_THRESHOLD = 10  # Time threshold in seconds
+TIME_DIFF_THRESHOLD = 0.1  # Time threshold in seconds
 
 def extract_rdata(packet):
     if packet.haslayer(DNS) and packet[DNS].qr == 1:  # DNS Response

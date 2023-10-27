@@ -7,7 +7,8 @@ For each new response, it checks if there is an existing entry with the same TXI
 If such an entry is found, and the responses arrived within a defined time threshold, it raises an alert indicating a potential DNS poisoning attack.
 
 Avoiding False Positives:
-To avoid false positives, such as those that might be caused by DNS-based load balancing, the program only raises an alert if the DNS responses meet the attack detection criteria and arrive within a defined time threshold (0.01 seconds by default).
+To avoid false positives, such as those that might be caused by DNS-based load balancing, the program only raises an alert if the DNS responses meet the attack detection criteria and arrive within a defined time threshold (0.1 seconds by default).
+This threshold should be adjusted based on heuristics.
 
 Limitations and Assumptions:
 - The program assumes that if two DNS responses with the same TXID and queried domain but different IP addresses arrive within the specified time threshold, it could be a result of DNS-based load balancing and not an attack. This might not always be the case.
