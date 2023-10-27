@@ -93,7 +93,6 @@ def packet_callback(packet):
 
 def is_malicious(ip_answer):
     if 'None' in ip_answer:
-        print("here")
         return False
     if any([is_private_ip(ip) for ip in ip_answer]):
         return True
@@ -125,8 +124,8 @@ def log_attack(domain, txid, legit_answers, malicious_answers):
         f.write(f"- TXID 0x{txid:04x} Request {domain[:-1]}\n")
         legit_answers_str = ', '.join([', '.join(map(str, ans)) for ans in legit_answers])
         malicious_answers_str = ', '.join([', '.join(map(str, ans)) for ans in malicious_answers])
-        f.write(f"- Legitimate responses: {legit_answers_str}\n")
-        f.write(f"- Malicious responses: {malicious_answers_str}\n")
+        f.write(f"- Answer1: {legit_answers_str}\n")
+        f.write(f"- Answer2: {malicious_answers_str}\n")
         f.write("\n")
     print(f"Attack Detected: {domain} TXID 0x{txid:04x}")
 
@@ -138,7 +137,7 @@ def get_default_interface():
         gateway_info = netifaces.gateways()
         default_gateway = gateway_info['default']
         if netifaces.AF_INET in default_gateway:
-            return 'vmenet0' #default_gateway[netifaces.AF_INET][1] RESTOREEEEEE
+            return default_gateway[netifaces.AF_INET][1]
         else:
             raise Exception("No IPv4 default gateway found")
     else:

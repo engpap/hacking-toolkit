@@ -1,5 +1,6 @@
-Frame 5 is the spoofed response.
-Frame 6 is the legitimate response.
+This analysis has been conducted using injection.pcap as an example.
+Here, frame 5 is a spoofed response, and frame 6 is the legitimate response for impara.net.
+The following differences and similarities should occur in any general case, not only for this specific scenario.
 ------------------------------------------------------------------------------------------------------------------------------
 Legitimate and spoofed DNS responses differs for:
 
@@ -7,26 +8,26 @@ Arrival Time:
 The time of capture varies, with Frame 5 being captured slightly earlier than Frame 6.
 
 Internet Protocol:
-The total length field varies between the two frames. Frame 5 has a length of 114 bytes, whereas Frame 6 has a length of 146 bytes.
+The total length field varies between the two frames. Frame 5 has a length of 96 bytes, whereas Frame 6 has a length of 113 bytes.
 The header checksum differs between the two frames.
 
 Identification Value:
 For Frame 5 -> 0x0001 (1)
-For Frame 6 -> 0x6cfd (27901)
+For Frame 6 -> 0x23bb (9147)
 The spoofed response has a notably low "Identification" value of 0x0001.
-The legitimate response uses 0x6cfd, a much higher value.
+The legitimate response uses 0x23bb, a much higher value.
 The disparity in "Identification" values between the two frames suggests potential DNS spoofing in Frame 5.
 
 Flags:
-The spoofed response indicates a successful query response, whereas the legitimate response indicates that the queried name does not exist (no such name).
+Both indicate a successful query response, but report different flag values.
+In detail, the legitimate response declares that recursion is available, while the spoofed response does not.
 
-Answers, Authority RRs, and additional RRs differ between the frames. Frame 5 has 1 answer, while Frame 6 has 1 authority RR and 1 additional RR.
-- Authoritative Nameservers Section
-The legitimate response has a section on authoritative nameservers, specifically an SOA record, detailing essential information like the primary name server and the responsible authority's mailbox.
-The spoofed response does not have any data provided for the authoritative nameservers in the given image.
+Answers, Authority RRs, and additional RRs differ between the frames.
+
+Frame 5 has 1 answer RR, while Frame 6 has 2 answers RRs and 1 additional RR.
 - Additional Records Section
 The spoofed response has an additional record related to the root with details on OPT and EDNS0 version.
-The legitimate response does not have any information provided in the "Additional records" section in the provided image.
+The legitimate response does not have any information provided in the "Additional records" section.
 
 Other Observations: The spoofed response (Frame 5) mentions "Retransmitted response, Original response in: 5" and "Retransmission: True". 
 This could indicate repeated attempts to send the response, a common technique in DNS spoofing where the attacker tries to get their malicious response accepted by bombarding the resolver with fake responses.
@@ -34,7 +35,6 @@ This could indicate repeated attempts to send the response, a common technique i
 Legitimate and spoofed DNS responses are the same for:
 
 Frame Information:
-Both frames have the same length, although Frame 6 is slightly larger in captured bits.
 Both frames utilize the UDP protocol, a common protocol for DNS traffic.
 
 Ethernet II, Src/Dst MAC Addresses:
