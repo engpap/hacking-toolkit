@@ -1,0 +1,83 @@
+GET http://cs468.cs.uic.edu/test_page.html?email=andra@papa.com HTTP/1.1
+Host: cs468.cs.uic.edu
+Proxy-Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9,it-IT;q=0.8,it;q=0.7
+Cookie: _ga_JBW1DWYWT4=GS1.1.1692488811.1.1.1692490902.0.0.0; _ga_93FFPHC5C7=GS1.2.1692627945.1.0.1692627945.0.0.0; _scid=cae6376b-1c30-46d9-85dd-e7eb9ac1b0f0; _sctr=1%7C1692853200000; _ga_D1RXSZHZRW=GS1.1.1693271164.2.1.1693272791.0.0.0; _scid_r=cae6376b-1c30-46d9-85dd-e7eb9ac1b0f0; _ga_705V361JZH=GS1.1.1693353472.4.1.1693353493.39.0.0; _ga_E8MG4S3WYG=GS1.1.1693406246.1.1.1693406573.0.0.0; _ga_D23BC5E6LG=GS1.2.1693596057.2.0.1693596057.0.0.0; sc_is_visitor_unique=rx11304851.1693596058.A45CD7E424F94F8A8C8B9862735520DA.2.2.2.2.2.2.2.1.1; _ga_BP1KZ4FV1C=GS1.2.1693598629.2.0.1693598630.0.0.0; _ga_90G2R23R1G=GS1.1.1694011512.2.0.1694011525.0.0.0; _ga_PXHNE282E6=GS1.1.1694207973.4.1.1694207999.0.0.0; _ga_SC3G6FLFNZ=GS1.1.1695239509.2.0.1695239509.0.0.0; _ga_P1NP2EC9DP=GS1.1.1695269006.1.1.1695269033.0.0.0; _ga_FZ6QDZ5J01=GS1.1.1695269090.5.0.1695269092.0.0.0; _ga_EG1YWNGW2F=GS1.1.1695336095.5.1.1695336323.0.0.0; _ga_RN5H0RLJZB=GS1.1.1696022250.1.0.1696022255.0.0.0; _ga_27L37YCJZD=GS1.1.1696022272.4.0.1696022275.0.0.0; _ga_Q6961EWY08=GS1.2.1696806806.1.0.1696806806.0.0.0; __utma=132477980.1638249737.1692487921.1698946792.1698946792.1; __utmc=132477980; __utmz=132477980.1698946792.1.1.utmcsr=cs.uic.edu|utmccn=(referral)|utmcmd=referral|utmcct=/; _ga_XXC7JMZCR2=GS1.1.1698979330.26.1.1698979408.0.0.0; _ga_T2YV1VZP5R=GS1.2.1699032414.37.0.1699032414.0.0.0; OptanonConsent=isGpcEnabled=0&datestamp=Fri+Nov+03+2023+12%3A26%3A54+GMT-0500+(Central+Daylight+Time)&version=6.39.0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1&geolocation=%3B&AwaitingReconsent=false; OptanonAlertBoxClosed=2023-11-03T17:26:54.304Z; _ga_3W4KD6HSW0=GS1.1.1699032414.42.1.1699034139.0.0.0; _ga=GA1.2.1638249737.1692487921; _ga_EW5LD6G5H2=GS1.2.1699389637.4.0.1699389637.0.0.0; sb=0dlz2978jf0jwaekdr09npc; pq=cbc0zycrx17l1rx565s3b; secret=u0voo742298fji8qmp3zs
+
+
+name: Intel Mac
+phone: 1692488811
+
+name: Intel Mac
+phone: 1692488811
+
+name: Intel Mac
+phone: 1692488811
+
+name: Intel Mac
+password: password=123465676
+credit_card: 1234567812345678
+ssn: 111-11-1111
+phone: 123-404-9898
+
+name: Intel Mac
+birthday: 2222-12-22
+password: password=123465676
+credit_card: 1234567812345678
+ssn: 111-11-1111
+phone: 123-404-9898
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
+name: Intel Mac
+
