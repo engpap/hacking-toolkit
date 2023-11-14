@@ -3,6 +3,8 @@ import argparse
 import socket
 import threading
 import re
+from names_dataset import NameDataset
+from urllib.parse import unquote
 '''
 NOTE
 The following command should work. Using a different IP or a port smaller than 1024 may result in access denied errors.
@@ -21,6 +23,11 @@ Program should execute using the following command and take in the following inl
 • listening port: The port your proxy will listen for connections on.
 '''
 DEBUG = True
+
+
+
+# Initialize the names dataset
+names_data = NameDataset()
 
 def main():
     parser = argparse.ArgumentParser(description='Proxy', add_help=False)
@@ -83,13 +90,18 @@ def proxy_passive(listening_ip, listening_port):
 def handle_client(client_socket):
     with client_socket:
         request = client_socket.recv(4096)
-        data = request.decode('utf-8')
+        request_data = request.decode('utf-8')
         # Parse the HTTP request to get the destination host and port
-        host, port = get_destination_host_port(data)
-        print("Handling request to host: {}, port: {}".format(host, port))
+        host, port = get_destination_host_port(request_data)
+        # Check if the destination port is for HTTPS (port 443), skip processing
+        if port == 443:
+            print("Skipping HTTPS request to host: {}, port: {}".format(host, port))
+            return
+
+        print("Handling HTTP request to host: {}, port: {}".format(host, port))
 
         # Process request data
-        parse_http_packet(data, 'request')
+        parse_http_packet(request_data, 'request')
         # Forwarding the request to the destination server (simplified)
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.connect((host, port))
@@ -98,6 +110,7 @@ def handle_client(client_socket):
         # Process server response
         response = server_socket.recv(4096)
         response_data = response.decode('utf-8')
+        print("Handling response from host: {}, port: {}".format(host, port))
         parse_http_packet(response_data, 'response')
         client_socket.sendall(response)
 
@@ -130,7 +143,6 @@ def parse_http_packet(data, type_packet):
         'credit_card': r'\b(?:\d[ -]*?){13,16}\b',
         'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
         'phone_number': r'\b\d{3}-\d{3}-\d{4}\b',
-        #'us_address': r'\d{1,6}\s(?:[A-Za-z0-9#]+\s){0,7}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way)\b',
         'address_query': r'address=([^&]+)',
         'address': r'\d{1,6}(\s|\+)[A-Za-z0-9#\s\+,.]+(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Court|Ct\.?|Lane|Ln|Way|Plaza|Plz)\b',
         'city_query': r'city=([^&\s]+)',
@@ -143,8 +155,15 @@ def parse_http_packet(data, type_packet):
     for key, pattern in regex_patterns.items():
         matches = re.findall(pattern, data)
         if matches:
+            if key == 'address_query':
+                matches = [match.replace('+', ' ') for match in matches]
             output[key] = matches
     
+    # Extract names using names-dataset
+    name_matches = extract_names(data)
+    if name_matches:
+        output['names'] = name_matches
+        
     cookies = re.findall(r'Cookie: (.*?)(?:\r\n|$)', data)
     if cookies:
         output['cookies'] = cookies
@@ -154,6 +173,33 @@ def parse_http_packet(data, type_packet):
         output['cookies'] = cookies
 
     log_info(output, type_packet)
+
+def extract_names(data):
+    """
+    Extracts names using the names-dataset library.
+    """
+   # Decode URL-encoded strings
+   # The unquote function reverses this encoding. It takes a URL-encoded string as input and returns a string with all the %xx escapes replaced by the characters they represent. For example:
+    # example: unquote("Hello%20World") would return "Hello World".
+    # example: unquote("Caf%C3%A9") would return "Café".
+    decoded_data = unquote(data.lower())  # Convert data to lowercase
+
+    # Choose an appropriate splitting method based on your data format
+    # For example, splitting by '&' for URL query parameters
+    words = re.split('&|\s|\n|=', decoded_data)
+
+    # Get the top 100 common names in the US
+    common_names = names_data.get_top_names(n=100, country_alpha2='US')
+    male_names = common_names['US']['M']
+    female_names = common_names['US']['F']
+    all_genders_names = male_names + female_names
+    common_names = [name.lower() for name in all_genders_names] # Convert common names to lowercase
+    names = []
+    for word in words:
+        if word in common_names:
+            names.append(word)
+    return names
+
 
 def log_info(info, data_type):
     with open("info1.txt", "a") as f:
