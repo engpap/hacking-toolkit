@@ -17,7 +17,7 @@ lsof -i :8080 # Get the PID of the process running on port 8080
 kill -9 <PID> # Kill the process
 '''
 
-DEBUG = True
+DEBUG = False
 PROXY_IP = "127.0.0.1"
 PROXY_PORT = 8080
 names_data = NameDataset() # Initialize the names-dataset library
