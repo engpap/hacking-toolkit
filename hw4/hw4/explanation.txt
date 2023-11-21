@@ -1,0 +1,21 @@
+This Python script implements a proxy server with both active and passive modes for intercepting and manipulating HTTP traffic. The general approach of this script is to create a proxy server that listens on a specified IP address and port, accepts client connections, processes HTTP requests and responses, and either passively logs sensitive data or actively injects malicious content and logs some client's computer information.
+
+In passive mode, the proxy server examines HTTP traffic for sensitive information. It uses regular expressions to parse this data. The script searches for query parameters such as first name, last name, birthday, password, address, city, state, and zip code, as well as non-query parameters like email, credit card numbers, social security numbers, phone numbers, and US addresses, using regex patterns. Furthermore, it employs the names-dataset library to identify common names within the data portion of packets, checking against a list of the 100 most popular male and female names. It also scans for cookies, including those specified in the HTTP packet as 'Cookie' and 'Set-Cookie'. The logged information is stored in a file named "info1.txt". During this process, the proxy forwards requests and responses without any alterations.
+
+Resources:
+Regex -> https://www.w3schools.com/python/python_regex.asp
+Names-dataset Library -> https://pypi.org/project/names-dataset/ and https://github.com/philipperemy/name-dataset
+Understanding the difference between Cookies and Set-Cookie: https://stackoverflow.com/questions/38485028/what-is-the-difference-between-set-cookie-and-cookie
+
+In active mode, the script takes a more intrusive approach. When it detects a request to a predefined domain (for example, http://example.com), it responds with a phishing page that displays a fake login interface. Additionally, the proxy injects JavaScript into HTML responses from other domains to collect client information. Specifically, when the proxy receives an HTML response from a server, it inserts a JavaScript snippet into the HTML before sending it back to the client. This JavaScript gathers data such as the user agent, screen resolution, and language settings, and relays this information back to the proxy server, which then logs it in "info2.txt".
+
+Inserting javascript into HTML -> https://www.w3schools.com/xml/ajax_xmlhttprequest_send.asp
+Getting client info -> https://www.w3schools.com/js/js_window_screen.asp and https://www.w3schools.com/jsref/obj_navigator.asp
+
+Common resource for working with sockets -> https://realpython.com/python-sockets/
+
+
+Assumptions related to global variables:
+- The proxy is running on 127.0.0.1:8080.
+- The DEBUG variable is set to False during production.
+
