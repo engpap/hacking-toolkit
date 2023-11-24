@@ -14,16 +14,19 @@ python honeypot.py -p 22
 
 To connect to the honeypot, run the following command from another terminal:
 ssh -p 22 carlo@127.0.0.1   
+
+Make sure to set in the ssh_config file the following:
+Host *
+    NumberOfPasswordPrompts 10
 '''
 
-
-DEBUG = True
+DEBUG = False
 NUM_ATTEMPTS = 5
 SERVER_KEY_PATH = '/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw5/server.key'
 IDLE_TIMEOUT = 60  # seconds
 
-# Global variable for the simulated file system
-file_system = {'/': {}}  # Root directory is empty initially
+# Global variable for the simulated file system: Root directory with no files
+file_system = {'/': {}}
 
 # Dictionary to store login attempts
 login_attempts = {}
@@ -53,7 +56,7 @@ class SSHHoneypot(paramiko.ServerInterface):
         
         return paramiko.AUTH_FAILED
 
-
+    # The following function needs to be overriden in order to avoid this error: `channel 0: open failed: administratively prohibited: `
     def check_channel_request(self, kind, chanid):
         if kind == 'session':
             return paramiko.OPEN_SUCCEEDED
@@ -90,7 +93,7 @@ def process_command(channel, command, username):
             return False
 
         content_part, filename = parts
-        filename = filename.strip()  # Remove leading and trailing whitespaces
+        filename = filename.strip()  # Remove leading & trailing whitespaces
         content = ' '.join(content_part.split()[1:]).strip('"')  # Remove echo and extra quotes
 
         if not is_valid_filename(filename):
@@ -155,12 +158,12 @@ def handle_client(client):
     server = SSHHoneypot()
     transport.start_server(server=server)
 
-    channel = transport.accept(20)
+    channel = transport.accept(IDLE_TIMEOUT)
     if channel is None:
         print("Client did not open a channel.")
         return
 
-    server.event.wait(10)
+    server.event.wait(IDLE_TIMEOUT)
     if not server.event.is_set():
         print("Client never asked for a shell.")
         return
@@ -179,9 +182,9 @@ def handle_client(client):
                     break
 
                 if channel.recv_ready():
-                    char = channel.recv(1).decode('utf-8')  # Read one character at a time
+                    char = channel.recv(1).decode('utf-8')  # read one character at a time
 
-                    if char == '\x7f' or char == '\x08':  # Handle backspace/delete key
+                    if char == '\x7f' or char == '\x08':  # handle backspace/delete key
                         if command_buffer:
                             command_buffer = command_buffer[:-1]  # Remove last character from buffer
                             channel.send('\b \b')  # Move cursor back, overwrite with space, then move back again
@@ -197,13 +200,12 @@ def handle_client(client):
                         channel.send(char) 
             except socket.error as e:
                 print(f'Socket exception: {e}')
-                break  # Break out of the loop in case of socket error
+                break  # break out of the loop in case of socket error
 
-            time.sleep(0.1)  # Prevents high CPU usage in the loop
     except Exception as e:
         print(f'Error: {e}')
     finally:
-        channel.close()
+        channel.close() 
         client.close()
 
 
@@ -235,7 +237,7 @@ def main():
         exit(1)
 
     start_server(int(args.port))
-    
+
 
 if __name__ == "__main__":
     main()

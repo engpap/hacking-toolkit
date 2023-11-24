@@ -1,0 +1,29 @@
+This Python script sets up a basic SSH honeypot. It begins by parsing the port number from a command-line argument, then starts a server listening on all available interfaces on the specified port. The server uses a socket and operates within an infinite loop to accept and handle client connections through a thread. 
+Ref: https://realpython.com/python-sockets/
+
+In the handling client function, a new Paramiko transport (SSH session) over the given client socket is created. The script checks for an existing RSA key at SERVER_KEY_PATH. If it exists, the key is loaded; otherwise, a new 2048-bit RSA key is generated. It instantiates a custom SSH server class (the Honeypot) and actually starts the SSH server.
+Ref: https://docs.paramiko.org/en/1.16/api/keys.html
+
+The server accepts an incoming SSH channel request within 60 seconds and waits for a shell request. It then enters a loop to handle incoming data from the client. If the connection is idle for longer than IDLE_TIMEOUT, the server disconnects the client.
+
+The server reads input one character at a time. When the client sends a newline or carriage return, the server processes the accumulated command. If the command is an exit/quit command, the loop is exited.
+The Backspace/Delete key was not specified in the requirements, but I added it to improve the user interaction with the shell and make it more realistic.
+
+To create the Honeypot, the Paramiko.ServerInterface from Paramiko library needs to be implemented.
+Ref: https://docs.paramiko.org/en/2.4/api/server.html
+Ref: https://github.com/paramiko/paramiko/blob/main/demos/demo_server.py
+In the class, to authenticate the user, check_auth_password is overridden. The method keeps track of the number of login attempts for each username. If the number of login attempts for a username reaches a threshold (NUM_ATTEMPTS), authentication is considered successful, and the username is stored. Otherwise, authentication fails.
+However, this was not enough because several errors were coming up.
+
+- The error `channel 0: open failed: administratively prohibited:` indicated the necessity of handling channel requests. To do so, check_channel_request is overridden. It returns paramiko.OPEN_SUCCEEDED if the request is for a session, indicating successful channel opening. Other types of requests are denied with paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED.
+- The error `shell request failed on channel 0` indicated the necessity of handling shell requests. To do so, `check_channel_shell_request` is overridden. It is called when a client requests a shell and sets the self.event to signal that a shell request has been made. It returns True to indicate that the shell request is granted.
+- The error `PTY allocation request failed on channel 0` has been fixed by overriding check_channel_pty_request. It is called when a client requests a pseudo-terminal (PTY). It returns True to indicate successful allocation of a PTY.
+
+
+The process_command function handles the different commands: ls, cat, cp, echo. I also added the commands quit and exit to close the connection from the client side. Each command received is split into parts.
+- ls: It lists the files in the root ('/') directory of the simulated file system (file_system). It concatenates the keys of the file_system['/'] dictionary, which represent file names, and sends this list back to the client.
+- echo: The command is split by the '>' symbol to separate the file content from the file name. The function checks the command format (it has to be .txt) and writes the content to the specified file in the file_system.
+- cat: The function checks if the file exists in the file_system global variable and sends its content back to the client. If the file is not found, an error message is sent.
+- cp: It checks if the source file exists and then copies its content to the destination file in file_system.
+- exit/quit: If the command is exit or quit, the function sends a goodbye message to the client and returns True, signaling the calling function to close the connection.
+Basically, the process_command function returns True if the client sends an exit or quit command, indicating that the connection should be closed. For all other cases, it returns False, allowing the session to continue.
