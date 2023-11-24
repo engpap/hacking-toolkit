@@ -2,7 +2,6 @@ import argparse
 import socket
 import threading
 import paramiko
-from collections import defaultdict
 import os
 import time
 
@@ -10,16 +9,16 @@ import time
 To run the honeypot, run the following command:
 python honeypot.py -p [port]
 
-ex:
+Example:
 python honeypot.py -p 22
-'''
 
-'''
-How to test TASK1:
+To connect to the honeypot, run the following command from another terminal:
 ssh -p 22 carlo@127.0.0.1   
 '''
+
+
 DEBUG = True
-NUM_ATTEMPTS = 1
+NUM_ATTEMPTS = 5
 SERVER_KEY_PATH = '/Users/dre/Desktop/NetSecurity/homeworks/cs468/hw5/server.key'
 IDLE_TIMEOUT = 60  # seconds
 
@@ -38,9 +37,8 @@ class SSHHoneypot(paramiko.ServerInterface):
         self.login_attempts = {}
         self.username = None
         self.event = threading.Event()
-        #self.username_list = self.load_username_list()
 
-    def check_auth_none(self, username):
+    def check_auth_password(self, username, password):
         
         if username not in self.login_attempts:
             self.login_attempts[username] = 0
@@ -61,80 +59,86 @@ class SSHHoneypot(paramiko.ServerInterface):
             return paramiko.OPEN_SUCCEEDED
         return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
     
-
+    # The following function needs to be overriden in order to avoid this error: `shell request failed on channel 0`
     def check_channel_shell_request(self, channel):
         self.event.set()
         return True
 
+    # The following function needs to be overriden in order to avoid this error: `PTY allocation request failed on channel 0`
     def check_channel_pty_request(self, channel, term, width, height, pixelwidth, pixelheight, modes):
         return True
     
-    """def load_username_list(self):
-        try:
-            with open('hw5/hw5_files/usernames.txt', 'r') as file:
-                usernames = file.read().splitlines()
-            return usernames
-        except FileNotFoundError:
-            print(f"Error: The file usernames.txt was not found.")
-            return []"""
-
 
 def process_command(channel, command, username):
     global file_system
-    parts = command.split()
-    debugPrint(f"\nReceived command parts: {parts}")
+    split_input_command = command.split()
+    debugPrint(f"\nReceived command parts: {split_input_command}")
 
     def is_valid_filename(filename):
         return filename.endswith('.txt')
 
-    if parts[0] == 'ls':
+    if split_input_command[0] == 'ls':
         current_files = ' '.join(file_system['/'].keys())
-        channel.send(f'\r\n{current_files}\n')
+        channel.send(f'\r\n{current_files}')
         debugPrint("Executed ls command")
 
-    elif parts[0] == 'echo' and '>' in command:
-        _, content, _, filename = command.split()
+    elif split_input_command[0] == 'echo' and '>' in command:
+        parts = command.split('>')
+        if len(parts) != 2:
+            channel.send(f'\r\nInvalid echo command format')
+            debugPrint(f"Invalid echo command format: {command}")
+            return False
+
+        content_part, filename = parts
+        filename = filename.strip()  # Remove leading and trailing whitespaces
+        content = ' '.join(content_part.split()[1:]).strip('"')  # Remove echo and extra quotes
+
         if not is_valid_filename(filename):
             channel.send(f'\r\nUnknown file extension\n')
             debugPrint(f"Unknown file extension error for filename: {filename}")
             return False
-        content = content.strip("''")  # Remove extra quotes
+        
         file_system['/'][filename] = content
-        channel.send(f'\r\nFile {filename} created\n')
+        channel.send(f'\r\nFile {filename} created')
         debugPrint(f"File created: {filename} with content: {content}")
 
-    elif parts[0] == 'cat':
-        filename = parts[1]
+    elif split_input_command[0] == 'cat':
+        filename = split_input_command[1]
         if not is_valid_filename(filename):
-            channel.send(f'\r\nUnknown file extension\n')
+            channel.send(f'\r\nUnknown file extension')
             debugPrint(f"Unknown file extension error for filename: {filename}")
             return False
         if filename in file_system['/']:
-            channel.send(f'\r\n{file_system["/"][filename]}\n')
+            channel.send(f'\r\n{file_system["/"][filename]}')
             debugPrint(f"Displayed content of file: {filename}")
         else:
-            channel.send(f'\r\nFile {filename} not found\n')
+            channel.send(f'\r\nFile {filename} not found')
             debugPrint(f"File not found error for filename: {filename}")
 
-    elif parts[0] == 'cp':
-        src, dest = parts[1], parts[2]
+    elif split_input_command[0] == 'cp':
+        src, dest = split_input_command[1], split_input_command[2]
         if not all(is_valid_filename(f) for f in [src, dest]):
-            channel.send(f'\r\nUnknown file extension\n')
+            channel.send(f'\r\nUnknown file extension')
             debugPrint(f"Unknown file extension error for filenames: {src}, {dest}")
             return False
         if src in file_system['/']:
             file_system['/'][dest] = file_system['/'][src]
-            channel.send(f'\r\nFile {dest} created with content from {src}\n')
+            channel.send(f'\r\nFile {dest} created with content from {src}')
             debugPrint(f"Copied content from {src} to {dest}")
         else:
             channel.send(f'\r\nFile {src} not found\n')
             debugPrint(f"File not found error for source file: {src}")
+    
+    elif command.strip().lower() in ['exit', 'quit']:
+        channel.send('\r\nGoodbye!\n')
+        debugPrint(f"Closing connection for {username}")
+        return True
 
     else:
-        channel.send(f'\r\nCommand {command} executed\n')
-        debugPrint(f"Executed custom command: {command}")
+        channel.send(f'\r\nCommand {command} not found')
+        debugPrint(f"Command {command} not executed. It's not found.")
         return False
-
+    
     return False
 
 
@@ -171,7 +175,7 @@ def handle_client(client):
         while True:
             try:
                 if time.time() - last_active > IDLE_TIMEOUT:
-                    print("Connection idle for too long. Disconnecting.")
+                    print(f"Connection idle for too long ({int(time.time() - last_active)} seconds). Disconnecting.")
                     break
 
                 if channel.recv_ready():
@@ -183,13 +187,14 @@ def handle_client(client):
                             channel.send('\b \b')  # Move cursor back, overwrite with space, then move back again
                     elif char == '\r' or char == '\n':  # Carriage return or newline
                         if command_buffer.strip():  # If there's a command in the buffer
-                            process_command(channel, command_buffer, server.username)
+                            if process_command(channel, command_buffer, server.username):
+                                break  # Break out of the loop if the command was exit or quit
                             last_active = time.time()  # Reset the activity timer
                             command_buffer = ''  # Clear the buffer for the next command
                         channel.send(f'\r\n{server.username}@honeypot:/$ ')  # Send prompt for next command
                     else:
                         command_buffer += char  # Add character to buffer
-                        channel.send(char)  # Optionally echo back the character
+                        channel.send(char) 
             except socket.error as e:
                 print(f'Socket exception: {e}')
                 break  # Break out of the loop in case of socket error
@@ -230,7 +235,6 @@ def main():
         exit(1)
 
     start_server(int(args.port))
-
     
 
 if __name__ == "__main__":
